@@ -2,71 +2,83 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>無比例模擬器</title>
+    <title>多角色比例模擬器 5.0 - 修正流暢版</title>
     <style>
         :root {
             --primary: #3498db;
+            --panel-bg: #ffffff;
             --accent: #e67e22;
-            --bg: #f4f7f6;
         }
 
         body { 
             font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; 
-            background: var(--bg); 
-            display: flex; 
-            margin: 0; padding: 20px; 
-            height: 100vh; gap: 20px;
+            background: #f0f3f5; 
+            display: flex; margin: 0; padding: 0; 
+            height: 100vh; overflow: hidden;
         }
 
-        /* 左側控制面板 */
+        /* 左側面板 */
         .sidebar {
             width: 360px;
-            background: white;
-            padding: 20px;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-            overflow-y: auto;
-            height: calc(100vh - 40px);
-        }
-
-        .control-group {
-            margin-bottom: 25px;
+            background: var(--panel-bg);
             padding: 15px;
-            background: #fafafa;
-            border-radius: 12px;
-            border: 1px solid #eee;
+            box-shadow: 2px 0 15px rgba(0,0,0,0.1);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
         }
 
-        h3 { font-size: 16px; margin: 0 0 15px 0; color: #2c3e50; display: flex; justify-content: space-between; }
-        h3 span { color: var(--primary); font-family: monospace; }
-
-        .row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-        label { font-size: 13px; width: 100px; color: #666; }
-        input[type="range"] { flex: 1; cursor: pointer; }
-        input[type="number"] { width: 55px; border: 1px solid #ddd; border-radius: 4px; padding: 2px 5px; }
+        .char-tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 15px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+        .tab {
+            padding: 8px 12px;
+            background: #eee;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+        .tab.active { background: var(--primary); color: white; }
+        .btn-add { background: #2ecc71; color: white; border: none; border-radius: 5px; cursor: pointer; padding: 5px 10px; }
 
         /* 右側預覽區 */
         .main-view {
             flex-grow: 1;
-            background: white;
-            border-radius: 16px;
-            position: relative;
+            background: #d1d8e0;
+            background-image: linear-gradient(#ffffff 1px, transparent 1px), linear-gradient(90deg, #ffffff 1px, transparent 1px);
+            background-size: 40px 40px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: flex-end; /* 固定底部往上增減 */
+            justify-content: flex-end;
             padding-bottom: 60px;
-            overflow: hidden;
-            border: 1px solid #e0e0e0;
+            position: relative;
         }
 
-        /* 縮放容器：負責自動縮放比例 */
-        #zoom-container {
+        .stage {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+        }
+
+        .character-container {
+            position: absolute;
+            bottom: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
             transform-origin: bottom center;
-            transition: transform 0.3s ease;
+            transition: transform 0.1s ease; /* 縮小延遲讓縮放更順 */
+            pointer-events: none;
         }
 
         .part {
@@ -76,232 +88,346 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
-            font-weight: bold;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-            transition: all 0.1s linear;
-            background-color: #cbd5e0;
+            color: white; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+            background-color: rgba(189, 195, 199, 0.8);
+            pointer-events: auto;
         }
 
-        .total-label {
-            position: absolute;
-            bottom: 20px;
-            font-size: 24px;
-            font-weight: 900;
-            color: #2c3e50;
-            background: rgba(255,255,255,0.8);
-            padding: 5px 20px;
-            border-radius: 30px;
-            border: 2px solid #2c3e50;
-        }
-
-        .btn-reset {
-            width: 100%;
-            padding: 10px;
-            background: #e74c3c;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            margin-top: 10px;
-        }
-        .btn-reset:hover { background: #c0392b; }
+        /* UI 元件 */
+        .section { margin-bottom: 15px; padding: 12px; background: #fafafa; border-radius: 8px; border: 1px solid #eee; }
+        h4 { margin: 0 0 10px 0; font-size: 14px; border-left: 4px solid var(--primary); padding-left: 8px; display: flex; justify-content: space-between; }
+        .row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 12px; }
+        .row label { width: 90px; flex-shrink: 0; }
+        .row input[type="range"] { flex: 1; cursor: pointer; }
+        .val-text { width: 45px; color: var(--primary); font-weight: bold; text-align: right; }
+        
+        .percent-row { display: flex; height: 18px; border-radius: 9px; overflow: hidden; margin: 10px 0; background: #ddd; font-size: 9px; line-height: 18px; color: white; text-align: center; }
+        
+        .footer-info { position: absolute; bottom: 15px; background: rgba(0,0,0,0.7); color: white; padding: 8px 20px; border-radius: 20px; font-size: 12px; }
+        .delete-btn { background: #e74c3c; color: white; border: none; padding: 2px 8px; border-radius: 4px; font-size: 10px; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div class="sidebar">
-    <h2 style="text-align:center; color: #2c3e50;">比例控制台</h2>
-
-    <!-- 顯示區塊數量 -->
-    <div class="control-group">
-        <h3>顯示區塊數: <span id="v-count">4</span></h3>
-        <input type="range" id="active-count" min="1" max="4" value="4" oninput="update()">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3 style="margin:0">角色編輯器 5.0</h3>
+        <button onclick="resetCurrent()" style="font-size:11px">重置當前</button>
+    </div>
+    
+    <div style="margin: 10px 0;">
+        <div class="char-tabs" id="charTabs"></div>
+        <button class="btn-add" onclick="addCharacter()">+ 新增角色</button>
     </div>
 
-    <!-- 總高度控制 -->
-    <div class="control-group" style="border: 2px solid var(--primary);">
-        <h3>總高度 (Total): <span id="v-total">280</span> cm</h3>
-        <input type="range" id="total-height-slider" min="50" max="600" value="280" oninput="adjustByTotal(this.value)">
-        <div class="row" style="margin-top:10px;">
-            <label>精確輸入</label>
-            <input type="number" id="total-height-num" value="280" oninput="adjustByTotal(this.value)"> cm
+    <div id="controls" style="display:none">
+        <div class="section">
+            <h4>基礎配置</h4>
+            <div class="row">
+                <label>水平位置</label>
+                <input type="range" min="-500" max="500" value="0" id="posX" oninput="updateCharBasic('posX', this.value)">
+                <span class="val-text" id="v-posX">0</span>
+            </div>
+            <div class="row">
+                <label>總身高 (cm)</label>
+                <input type="range" min="50" max="300" id="totalH" oninput="updateTotalH(this.value)">
+                <input type="number" id="totalHNum" style="width:55px" oninput="updateTotalH(this.value)">
+            </div>
+            <div class="row">
+                <label>顯示區塊數</label>
+                <input type="range" min="1" max="5" id="visibleCount" oninput="updateVisibleCount(this.value)">
+                <span class="val-text" id="v-visible">5</span>
+            </div>
         </div>
-    </div>
 
-    <!-- 區塊高度 -->
-    <div class="control-group">
-        <h3>分段高度 (cm)</h3>
-        <div class="row"><label>1.頭部</label><input type="range" id="h1" min="10" max="150" value="50" oninput="update()"><span id="vh1">50</span></div>
-        <div class="row"><label>2.軀幹</label><input type="range" id="h2" min="10" max="200" value="80" oninput="update()"><span id="vh2">80</span></div>
-        <div class="row"><label>3.髖部</label><input type="range" id="h3" min="10" max="150" value="50" oninput="update()"><span id="vh3">50</span></div>
-        <div class="row"><label>4.腿部</label><input type="range" id="h4" min="10" max="250" value="100" oninput="update()"><span id="vh4">100</span></div>
-    </div>
+        <div class="section">
+            <h4>佔比分析 (%)</h4>
+            <div id="percentBar" class="percent-row"></div>
+        </div>
 
-    <!-- 接縫寬度 -->
-    <div class="control-group">
-        <h3>接縫寬度 (cm)</h3>
-        <div class="row"><label>頭頂</label><input type="range" id="w1" min="5" max="300" value="60" oninput="update()"></div>
-        <div class="row" style="color:var(--accent)"><label>頭底(頸上)</label><input type="range" id="w2a" min="5" max="300" value="80" oninput="update()"></div>
-        <div class="row" style="color:var(--accent)"><label>軀幹頂(頸下)</label><input type="range" id="w2b" min="5" max="350" value="90" oninput="update()"></div>
-        <div class="row"><label>腰部(連動)</label><input type="range" id="w3" min="5" max="400" value="120" oninput="update()"></div>
-        <div class="row"><label>髖底(連動)</label><input type="range" id="w4" min="5" max="400" value="100" oninput="update()"></div>
-        <div class="row"><label>腳底</label><input type="range" id="w5" min="5" max="300" value="60" oninput="update()"></div>
-    </div>
+        <div class="section">
+            <h4>部位高度 (cm)</h4>
+            <div id="heightSliders"></div>
+        </div>
 
-    <div class="control-group">
-        <h3>圖片與重置</h3>
-        <input type="file" multiple onchange="loadImages(event)">
-        <button class="btn-reset" onclick="clearAllImages()">解除所有圖片</button>
+        <div class="section">
+            <h4>寬度節點 (cm)</h4>
+            <div id="widthSliders"></div>
+        </div>
+
+        <div class="section">
+            <h4>貼圖</h4>
+            <div id="imgUploads"></div>
+            <button class="delete-btn" style="width:100%; margin-top:10px" onclick="deleteCharacter()">刪除此角色</button>
+        </div>
     </div>
 </div>
 
-<div class="main-view" id="viewport">
-    <div id="zoom-container">
-        <div id="p1" class="part" style="background-color: #e74c3c;">頭部</div>
-        <div id="p2" class="part" style="background-color: #3498db;">軀幹</div>
-        <div id="p3" class="part" style="background-color: #9b59b6;">髖部</div>
-        <div id="p4" class="part" style="background-color: #2ecc71;">腿部</div>
-    </div>
-    <div class="total-label" id="label-total">180 cm</div>
+<div class="main-view">
+    <div class="stage" id="stage"></div>
+    <div class="footer-info" id="global-info">角色數量: 0 | 畫面自動縮放中</div>
 </div>
 
 <script>
-    const SCALE_BASE = 2; // 1cm = 2px
-    const VIEWPORT_MARGIN = 100;
+    const partNames = ["頭部", "軀幹", "髖部", "大腿", "小腿"];
+    const widthNames = ["頭頂", "頭底", "頸部(軀幹頂)", "腰部", "髖部底", "膝蓋", "腳底"];
+    const colors = ["#e74c3c", "#3498db", "#f1c40f", "#2ecc71", "#9b59b6"];
 
-    function update() {
-        const count = parseInt(document.getElementById('active-count').value);
-        document.getElementById('v-count').innerText = count;
-
-        const h = [
-            parseInt(document.getElementById('h1').value),
-            parseInt(document.getElementById('h2').value),
-            parseInt(document.getElementById('h3').value),
-            parseInt(document.getElementById('h4').value)
-        ];
-
-        const w = {
-            p1t: parseInt(document.getElementById('w1').value),
-            p1b: parseInt(document.getElementById('w2a').value),
-            p2t: parseInt(document.getElementById('w2b').value),
-            p2b: parseInt(document.getElementById('w3').value),
-            p3t: parseInt(document.getElementById('w3').value), // 連動腰部
-            p3b: parseInt(document.getElementById('w4').value),
-            p4t: parseInt(document.getElementById('w4').value), // 連動髖底
-            p4b: parseInt(document.getElementById('w5').value)
+    function createDefaultChar(name) {
+        return {
+            name: name,
+            posX: 0,
+            totalH: 180,
+            visible: 5,
+            heights: [30, 50, 25, 40, 35], 
+            widths: [50, 65, 70, 100, 90, 70, 50],
+            imgs: [null, null, null, null, null]
         };
-
-        let currentTotalHeight = 0;
-
-        // 更新各區塊
-        for (let i = 1; i <= 4; i++) {
-            const el = document.getElementById(`p${i}`);
-            const valDisplay = document.getElementById(`vh${i}`);
-            
-            if (i <= count) {
-                el.style.display = 'flex';
-                valDisplay.innerText = h[i-1];
-                currentTotalHeight += h[i-1];
-
-                // 決定該區塊的寬度
-                let topW, botW;
-                if(i===1) { topW = w.p1t; botW = w.p1b; }
-                else if(i===2) { topW = w.p2t; botW = w.p2b; }
-                else if(i===3) { topW = w.p3t; botW = w.p3b; }
-                else if(i===4) { topW = w.p4t; botW = w.p4b; }
-
-                const maxW = Math.max(topW, botW);
-                el.style.width = (maxW * SCALE_BASE) + 'px';
-                el.style.height = (h[i-1] * SCALE_BASE) + 'px';
-
-                // Clip Path 計算
-                const tP = ((maxW - topW) / 2 / maxW) * 100;
-                const bP = ((maxW - botW) / 2 / maxW) * 100;
-                el.style.clipPath = `polygon(${tP}% 0%, ${100-tP}% 0%, ${100-bP}% 100%, ${bP}% 100%)`;
-            } else {
-                el.style.display = 'none';
-                valDisplay.innerText = "0";
-            }
-        }
-
-        // 更新總高度數值顯示
-        document.getElementById('v-total').innerText = currentTotalHeight;
-        document.getElementById('label-total').innerText = currentTotalHeight + " cm";
-        document.getElementById('total-height-slider').value = currentTotalHeight;
-        document.getElementById('total-height-num').value = currentTotalHeight;
-
-        // 自動縮放邏輯
-        autoScale(currentTotalHeight * SCALE_BASE);
     }
 
-    // 依據總高度自動按比例分配高度
-    function adjustByTotal(newTotal) {
-        newTotal = parseInt(newTotal);
-        if (isNaN(newTotal) || newTotal <= 0) return;
+    let characters = [createDefaultChar("角色 1")];
+    let activeIdx = 0;
 
-        const count = parseInt(document.getElementById('active-count').value);
-        let currentH = [];
-        let sum = 0;
-        for(let i=1; i<=count; i++) {
-            let val = parseInt(document.getElementById(`h${i}`).value);
-            currentH.push(val);
-            sum += val;
-        }
-
-        if(sum === 0) sum = 1; // 防止除以0
-        const ratio = newTotal / sum;
-
-        for(let i=1; i<=count; i++) {
-            const newVal = Math.max(10, Math.round(currentH[i-1] * ratio));
-            document.getElementById(`h${i}`).value = newVal;
-        }
-        update();
+    function init() {
+        renderTabs();
+        loadControls(); // 建立滑桿 HTML
+        renderStage();
     }
 
-    // 當高度超出畫面時縮小比例
-    function autoScale(actualPxHeight) {
-        const viewportH = document.getElementById('viewport').clientHeight - VIEWPORT_MARGIN;
-        const zoomContainer = document.getElementById('zoom-container');
+    function renderTabs() {
+        const container = document.getElementById('charTabs');
+        container.innerHTML = characters.map((c, i) => `
+            <div class="tab ${i === activeIdx ? 'active' : ''}" onclick="switchChar(${i})">${c.name}</div>
+        `).join('');
+    }
+
+    function switchChar(idx) {
+        activeIdx = idx;
+        renderTabs();
+        loadControls();
+        renderStage();
+    }
+
+    function addCharacter() {
+        const newChar = createDefaultChar("角色 " + (characters.length + 1));
+        newChar.posX = characters.length * 60; 
+        characters.push(newChar);
+        activeIdx = characters.length - 1;
+        init();
+    }
+
+    function deleteCharacter() {
+        if(characters.length <= 1) return alert("至少保留一個角色");
+        characters.splice(activeIdx, 1);
+        activeIdx = 0;
+        init();
+    }
+
+    // --- 介面渲染：只有在切換角色或區塊數變動時執行 ---
+    function loadControls() {
+        const c = characters[activeIdx];
+        document.getElementById('controls').style.display = 'block';
         
-        if (actualPxHeight > viewportH) {
-            const factor = viewportH / actualPxHeight;
-            zoomContainer.style.transform = `scale(${factor})`;
-        } else {
-            zoomContainer.style.transform = `scale(1)`;
-        }
+        // 基礎
+        document.getElementById('posX').value = c.posX;
+        document.getElementById('v-posX').innerText = c.posX;
+        document.getElementById('totalH').value = c.totalH;
+        document.getElementById('totalHNum').value = Math.round(c.totalH);
+        document.getElementById('visibleCount').value = c.visible;
+        document.getElementById('v-visible').innerText = c.visible;
+
+        // 高度滑桿生成
+        const hDiv = document.getElementById('heightSliders');
+        hDiv.innerHTML = c.heights.map((h, i) => `
+            <div class="row" id="h-row-${i}" style="display: ${i < c.visible ? 'flex' : 'none'}">
+                <label>${partNames[i]}</label>
+                <input type="range" min="5" max="150" step="0.1" value="${h}" class="h-slider" oninput="adjustPartHeight(${i}, this.value)">
+                <span class="val-text">${Math.round(h)}</span>
+            </div>
+        `).join('');
+
+        // 寬度滑桿生成
+        const wDiv = document.getElementById('widthSliders');
+        wDiv.innerHTML = c.widths.map((w, i) => `
+            <div class="row">
+                <label>${widthNames[i]}</label>
+                <input type="range" min="5" max="250" value="${w}" class="w-slider" oninput="updateCharWidth(${i}, this.value)">
+                <span class="val-text">${w}</span>
+            </div>
+        `).join('');
+
+        // 圖片上傳
+        const iDiv = document.getElementById('imgUploads');
+        iDiv.innerHTML = partNames.map((name, i) => `
+            <div class="row" style="display: ${i < c.visible ? 'flex' : 'none'}">
+                <label>${name}</label>
+                <input type="file" style="font-size:10px" onchange="uploadImg(event, ${i})">
+            </div>
+        `).join('');
+
+        updatePercentBar();
     }
 
-    // 圖片功能
-    function loadImages(e) {
-        const files = e.target.files;
-        for(let i=0; i<files.length && i<4; i++) {
+    // --- 實時同步：滑動滑桿時只更新數值，不重新生成 HTML ---
+    function syncUISliders() {
+        const c = characters[activeIdx];
+        
+        // 更新高度滑桿與數值文字
+        const hSliders = document.querySelectorAll('.h-slider');
+        const hTexts = document.querySelector('#heightSliders').querySelectorAll('.val-text');
+        c.heights.forEach((h, i) => {
+            if (hSliders[i]) hSliders[i].value = h;
+            if (hTexts[i]) hTexts[i].innerText = Math.round(h);
+        });
+
+        // 更新寬度數值文字
+        const wTexts = document.querySelector('#widthSliders').querySelectorAll('.val-text');
+        c.widths.forEach((w, i) => {
+            if (wTexts[i]) wTexts[i].innerText = w;
+        });
+
+        document.getElementById('totalH').value = c.totalH;
+        document.getElementById('totalHNum').value = Math.round(c.totalH);
+        updatePercentBar();
+    }
+
+    function updateCharBasic(key, val) {
+        characters[activeIdx][key] = parseInt(val);
+        document.getElementById('v-'+key).innerText = val;
+        renderStage();
+    }
+
+    function updateVisibleCount(val) {
+        characters[activeIdx].visible = parseInt(val);
+        loadControls(); // 區塊數變了，必須重新生成列表
+        renderStage();
+    }
+
+    function adjustPartHeight(idx, newVal) {
+        newVal = parseFloat(newVal);
+        const c = characters[activeIdx];
+        const diff = newVal - c.heights[idx];
+        c.heights[idx] = newVal;
+
+        const otherIndices = [];
+        for(let i=0; i<c.visible; i++) if(i !== idx) otherIndices.push(i);
+
+        if(otherIndices.length > 0) {
+            const adj = diff / otherIndices.length;
+            otherIndices.forEach(oi => {
+                c.heights[oi] -= adj;
+                if(c.heights[oi] < 5) c.heights[oi] = 5;
+            });
+        }
+        
+        // 修正總和補償誤差
+        const currentSum = c.heights.slice(0, c.visible).reduce((a,b)=>a+b, 0);
+        const gap = (c.totalH - currentSum) / otherIndices.length;
+        otherIndices.forEach(oi => c.heights[oi] += gap);
+
+        syncUISliders();
+        renderStage();
+    }
+
+    function updateTotalH(val) {
+        if(!val || val < 1) return;
+        val = parseFloat(val);
+        const c = characters[activeIdx];
+        const ratio = val / c.totalH;
+        c.totalH = val;
+        c.heights = c.heights.map(h => h * ratio);
+
+        syncUISliders();
+        renderStage();
+    }
+
+    function updateCharWidth(i, val) {
+        characters[activeIdx].widths[i] = parseInt(val);
+        const wTexts = document.querySelector('#widthSliders').querySelectorAll('.val-text');
+        wTexts[i].innerText = val;
+        renderStage();
+    }
+
+    function updatePercentBar() {
+        const c = characters[activeIdx];
+        const bar = document.getElementById('percentBar');
+        const visibleH = c.heights.slice(0, c.visible);
+        const sum = visibleH.reduce((a,b)=>a+b, 0);
+        bar.innerHTML = visibleH.map((h, i) => {
+            const p = (h / sum * 100).toFixed(1);
+            return `<div style="width:${p}%; background:${colors[i]}">${p}%</div>`;
+        }).join('');
+    }
+
+    function uploadImg(e, partIdx) {
+        const file = e.target.files[0];
+        if(file) {
             const reader = new FileReader();
-            const partId = `p${i+1}`;
-            reader.onload = (event) => {
-                const el = document.getElementById(partId);
-                el.style.backgroundImage = `url(${event.target.result})`;
-                el.innerText = "";
+            reader.onload = (ev) => {
+                characters[activeIdx].imgs[partIdx] = ev.target.result;
+                renderStage();
             };
-            reader.readAsDataURL(files[i]);
+            reader.readAsDataURL(file);
         }
     }
 
-    function clearAllImages() {
-        const names = ["頭部", "軀幹", "髖部", "腿部"];
-        for(let i=1; i<=4; i++) {
-            const el = document.getElementById(`p${i}`);
-            el.style.backgroundImage = 'none';
-            el.innerText = names[i-1];
-        }
+    function renderStage() {
+        const stage = document.getElementById('stage');
+        stage.innerHTML = '';
+        const SCALE_BASE = 2.5;
+        let maxDisplayH = 0;
+
+        characters.forEach((c, charIdx) => {
+            const charDiv = document.createElement('div');
+            charDiv.className = 'character-container';
+            charDiv.style.left = `calc(50% + ${c.posX}px)`;
+            charDiv.style.zIndex = charIdx;
+
+            let charH = 0;
+            for(let i=0; i<c.visible; i++) {
+                const part = document.createElement('div');
+                part.className = 'part';
+                
+                let tw, bw;
+                if(i === 0) { tw = c.widths[0]; bw = c.widths[1]; }
+                else { tw = c.widths[i+1]; bw = c.widths[i+2]; }
+
+                const maxW = Math.max(tw, bw);
+                const hPx = c.heights[i] * SCALE_BASE;
+                part.style.width = (maxW * SCALE_BASE) + 'px';
+                part.style.height = hPx + 'px';
+                if(c.imgs[i]) part.style.backgroundImage = `url(${c.imgs[i]})`;
+                else part.style.backgroundColor = colors[i];
+
+                const tP = ((maxW - tw) / 2 / maxW) * 100;
+                const bP = ((maxW - bw) / 2 / maxW) * 100;
+                part.style.clipPath = `polygon(${tP}% 0%, ${100-tP}% 0%, ${100-bP}% 100%, ${bP}% 100%)`;
+                
+                charDiv.appendChild(part);
+                charH += hPx;
+            }
+            if(charH > maxDisplayH) maxDisplayH = charH;
+            stage.appendChild(charDiv);
+        });
+
+        // 自動縮放
+        const stageH = stage.clientHeight - 60;
+        const scale = maxDisplayH > stageH ? stageH / maxDisplayH : 1;
+        document.querySelectorAll('.character-container').forEach(el => {
+            el.style.transform = `scale(${scale})`;
+        });
+
+        document.getElementById('global-info').innerText = `角色數量: ${characters.length} | 畫布縮放: ${scale.toFixed(2)}`;
     }
 
-    // 視窗大小改變時重新計算縮放
-    window.onresize = update;
+    function resetCurrent() {
+        const name = characters[activeIdx].name;
+        characters[activeIdx] = createDefaultChar(name);
+        init();
+    }
 
-    // 初始化
-    update();
+    window.onresize = renderStage;
+    init();
 </script>
 
 </body>
