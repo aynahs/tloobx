@@ -8,7 +8,7 @@
             --primary: #3498db;
             --panel-bg: #ffffff;
             --accent: #e67e22;
-            --ground: #7f8c8d;
+            --ruler-color: #555;
         }
 
         body { 
@@ -18,7 +18,6 @@
             height: 100vh; overflow: hidden;
         }
 
-        /* 左側面板 */
         .sidebar {
             width: 360px;
             background: var(--panel-bg);
@@ -31,131 +30,111 @@
         }
 
         .char-tabs {
-            display: flex;
-            gap: 5px;
-            margin-bottom: 15px;
-            overflow-x: auto;
-            padding-bottom: 5px;
+            display: flex; gap: 5px; margin-bottom: 15px; overflow-x: auto; padding-bottom: 5px;
         }
         .tab {
-            padding: 8px 12px;
-            background: #eee;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 12px;
-            white-space: nowrap;
+            padding: 8px 12px; background: #eee; border-radius: 5px; cursor: pointer; font-size: 12px; white-space: nowrap;
         }
         .tab.active { background: var(--primary); color: white; }
         .btn-add { background: #2ecc71; color: white; border: none; border-radius: 5px; cursor: pointer; padding: 5px 10px; }
 
-        /* 右側預覽區 */
         .main-view {
             flex-grow: 1;
             background: #d1d8e0;
             background-image: linear-gradient(#ffffff 1px, transparent 1px), linear-gradient(90deg, #ffffff 1px, transparent 1px);
             background-size: 40px 40px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-end;
-            position: relative;
+            display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+            padding-bottom: 60px; position: relative;
         }
 
         .stage {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: flex-end;
-            padding-bottom: 80px; /* 底部地平線位置 */
-            box-sizing: border-box;
+            position: relative; width: 100%; height: 100%;
+            display: flex; justify-content: center; align-items: flex-end;
         }
 
-        /* 地平線 */
-        .ground-line {
+        /* 純 CSS 基準線 */
+        .stage::after {
+            content: '';
             position: absolute;
-            bottom: 80px;
-            left: 50px;
-            right: 50px;
+            bottom: 60px; /* 與角色底部位置一致 */
+            left: 20px;
+            right: 80px;
             height: 2px;
-            background: var(--ground);
+            background: #34495e;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            z-index: 10;
+        }
+
+        /* 標尺容器 (跟隨角色縮放) */
+        .ruler-container {
+            position: absolute;
+            right: 30px;
+            bottom: 60px;
+            width: 50px;
+            height: 750px; /* 300cm * 2.5 SCALE_BASE */
+            transform-origin: bottom right;
+            pointer-events: none;
             z-index: 5;
         }
 
-        /* 高度尺 */
+        /* 標尺主體 - 使用純 CSS Gradient */
         .ruler {
-            position: absolute;
-            right: 20px;
-            bottom: 80px;
-            width: 50px;
-            border-right: 2px solid #333;
-            z-index: 10;
-        }
-        .ruler-tick {
-            position: absolute;
-            right: 0;
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            font-size: 10px;
-            color: #333;
             width: 100%;
+            height: 100%;
+            border-right: 2px solid var(--ruler-color);
+            position: relative;
+            background-image: 
+                /* 1cm 刻度 */
+                repeating-linear-gradient(0deg, var(--ruler-color) 0, var(--ruler-color) 1px, transparent 1px, transparent 2.5px),
+                /* 5cm 刻度 */
+                repeating-linear-gradient(0deg, var(--ruler-color) 0, var(--ruler-color) 2px, transparent 2px, transparent 12.5px),
+                /* 10cm 刻度 */
+                repeating-linear-gradient(0deg, var(--ruler-color) 0, var(--ruler-color) 3px, transparent 3px, transparent 25px);
+            background-size: 15px 100%, 25px 100%, 35px 100%;
+            background-repeat: no-repeat;
+            background-position: right top;
         }
-        .ruler-tick::after {
-            content: "";
-            display: inline-block;
-            height: 1px;
-            background: #333;
-            margin-left: 5px;
-        }
-        .tick-major::after { width: 15px; height: 2px; }
-        .tick-minor::after { width: 8px; }
 
-        /* 角色容器 */
+        /* 標尺數字 */
+        .ruler-label {
+            position: absolute;
+            right: 40px;
+            font-size: 12px;
+            color: var(--ruler-color);
+            font-weight: bold;
+            transform: translateY(50%);
+        }
+
         .character-container {
             position: absolute;
-            bottom: 80px; 
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            bottom: 60px; 
+            display: flex; flex-direction: column; align-items: center;
             transform-origin: bottom center;
             transition: transform 0.1s ease;
             pointer-events: none;
         }
 
         .part {
-            background-size: 100% 100%;
-            background-repeat: no-repeat;
-            background-position: center;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            background-size: 100% 100%; background-repeat: no-repeat; background-position: center;
+            display: flex; align-items: center; justify-content: center;
             color: white; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
             background-color: rgba(189, 195, 199, 0.8);
             pointer-events: auto;
         }
 
         .height-label {
-            position: absolute;
-            bottom: -35px;
-            background: rgba(0,0,0,0.6);
-            color: white;
-            padding: 2px 12px;
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: bold;
-            white-space: nowrap;
-            pointer-events: none;
+            position: absolute; bottom: -35px; background: rgba(0,0,0,0.6); color: white;
+            padding: 2px 12px; border-radius: 10px; font-size: 14px; font-weight: bold;
+            white-space: nowrap; pointer-events: none;
         }
 
-        /* UI 元件 */
         .section { margin-bottom: 15px; padding: 12px; background: #fafafa; border-radius: 8px; border: 1px solid #eee; }
         h4 { margin: 0 0 10px 0; font-size: 14px; border-left: 4px solid var(--primary); padding-left: 8px; display: flex; justify-content: space-between; }
         .row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 12px; }
         .row label { width: 95px; flex-shrink: 0; }
         .row input[type="range"] { flex: 1; cursor: pointer; }
         .val-text { width: 45px; color: var(--primary); font-weight: bold; text-align: right; }
+        
         .percent-row { display: flex; height: 18px; border-radius: 9px; overflow: hidden; margin: 10px 0; background: #ddd; font-size: 9px; line-height: 18px; color: white; text-align: center; }
         .delete-btn { background: #e74c3c; color: white; border: none; padding: 5px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; }
     </style>
@@ -182,7 +161,7 @@
                 <span class="val-text" id="v-posX">0</span>
             </div>
             <div class="row">
-                <label>當前顯示總高 (cm)</label>
+                <label>顯示總高 (cm)</label>
                 <input type="range" min="10" max="300" id="totalH" oninput="updateTotalH(this.value)">
                 <input type="number" id="totalHNum" style="width:55px" oninput="updateTotalH(this.value)">
             </div>
@@ -192,22 +171,18 @@
                 <span class="val-text" id="v-visible">5</span>
             </div>
         </div>
-
         <div class="section">
             <h4>佔比分析 (%)</h4>
             <div id="percentBar" class="percent-row"></div>
         </div>
-
         <div class="section">
             <h4>部位高度 (cm)</h4>
             <div id="heightSliders"></div>
         </div>
-
         <div class="section">
             <h4>寬度節點 (cm)</h4>
             <div id="widthSliders"></div>
         </div>
-
         <div class="section">
             <h4>貼圖</h4>
             <div id="imgUploads"></div>
@@ -218,9 +193,18 @@
 
 <div class="main-view">
     <div class="stage" id="stage">
-        <div class="ground-line"></div>
-        <!-- 尺規容器 -->
-        <div class="ruler" id="ruler"></div>
+        <!-- 標尺 -->
+        <div class="ruler-container" id="rulerContainer">
+            <div class="ruler">
+                <div class="ruler-label" style="bottom: 0px">0</div>
+                <div class="ruler-label" style="bottom: 125px">50</div>
+                <div class="ruler-label" style="bottom: 250px">100</div>
+                <div class="ruler-label" style="bottom: 375px">150</div>
+                <div class="ruler-label" style="bottom: 500px">200</div>
+                <div class="ruler-label" style="bottom: 625px">250</div>
+                <div class="ruler-label" style="bottom: 750px">300</div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -231,9 +215,7 @@
 
     function createDefaultChar(name) {
         return {
-            name: name,
-            posX: 0,
-            visible: 5,
+            name: name, posX: 0, visible: 5,
             heights: [30, 50, 25, 40, 35], 
             widths: [50, 65, 70, 100, 90, 70, 50],
             imgs: [null, null, null, null, null]
@@ -262,9 +244,7 @@
 
     function switchChar(idx) {
         activeIdx = idx;
-        renderTabs();
-        loadControls();
-        renderStage();
+        renderTabs(); loadControls(); renderStage();
     }
 
     function addCharacter() {
@@ -304,17 +284,22 @@
 
         const wDiv = document.getElementById('widthSliders');
         wDiv.innerHTML = c.widths.map((w, i) => {
-            let show = false;
-            if (i <= 1) show = c.visible >= 1; 
-            else if (i <= 3) show = c.visible >= 2; 
-            else if (i === 4) show = c.visible >= 3; 
-            else if (i === 5) show = c.visible >= 4; 
-            else if (i === 6) show = c.visible >= 5; 
-            return `<div class="row" style="display: ${show ? 'flex' : 'none'}"><label>${widthNames[i]}</label><input type="range" min="5" max="250" value="${w}" class="w-slider" oninput="updateCharWidth(${i}, this.value)"><span class="val-text">${w}</span></div>`;
+            let show = (i <= 1 && c.visible >= 1) || (i <= 3 && c.visible >= 2) || (i === 4 && c.visible >= 3) || (i === 5 && c.visible >= 4) || (i === 6 && c.visible >= 5);
+            return `
+                <div class="row" style="display: ${show ? 'flex' : 'none'}">
+                    <label>${widthNames[i]}</label>
+                    <input type="range" min="5" max="250" value="${w}" class="w-slider" oninput="updateCharWidth(${i}, this.value)">
+                    <span class="val-text">${w}</span>
+                </div>
+            `;
         }).join('');
 
         const iDiv = document.getElementById('imgUploads');
-        iDiv.innerHTML = partNames.map((name, i) => `<div class="row" style="display: ${i < c.visible ? 'flex' : 'none'}"><label>${name}</label><input type="file" style="font-size:10px" onchange="uploadImg(event, ${i})"></div>`).join('');
+        iDiv.innerHTML = partNames.map((name, i) => `
+            <div class="row" style="display: ${i < c.visible ? 'flex' : 'none'}">
+                <label>${name}</label><input type="file" style="font-size:10px" onchange="uploadImg(event, ${i})">
+            </div>
+        `).join('');
         updatePercentBar();
     }
 
@@ -340,8 +325,7 @@
 
     function updateVisibleCount(val) {
         characters[activeIdx].visible = parseInt(val);
-        loadControls();
-        renderStage();
+        loadControls(); renderStage();
     }
 
     function adjustPartHeight(idx, newVal) {
@@ -349,18 +333,17 @@
         const c = characters[activeIdx];
         const oldVisH = getVisibleHeight(c);
         c.heights[idx] = newVal;
-        const otherVisibleIndices = [];
-        for(let i=0; i<c.visible; i++) if(i !== idx) otherVisibleIndices.push(i);
-        if(otherVisibleIndices.length > 0) {
+        const otherVis = [];
+        for(let i=0; i<c.visible; i++) if(i !== idx) otherVis.push(i);
+        if(otherVis.length > 0) {
             const currentVisSum = getVisibleHeight(c);
-            const gap = (oldVisH - currentVisSum) / otherVisibleIndices.length;
-            otherVisibleIndices.forEach(oi => {
+            const gap = (oldVisH - currentVisSum) / otherVis.length;
+            otherVis.forEach(oi => {
                 c.heights[oi] += gap;
                 if(c.heights[oi] < 5) c.heights[oi] = 5;
             });
         }
-        syncUISliders();
-        renderStage();
+        syncUISliders(); renderStage();
     }
 
     function updateTotalH(val) {
@@ -370,8 +353,7 @@
         const currentVisH = getVisibleHeight(c);
         const ratio = val / currentVisH;
         for(let i=0; i<c.visible; i++) c.heights[i] *= ratio;
-        syncUISliders();
-        renderStage();
+        syncUISliders(); renderStage();
     }
 
     function updateCharWidth(i, val) {
@@ -384,10 +366,9 @@
     function updatePercentBar() {
         const c = characters[activeIdx];
         const bar = document.getElementById('percentBar');
-        const visibleH = c.heights.slice(0, c.visible);
-        const sum = getVisibleHeight(c);
-        bar.innerHTML = visibleH.map((h, i) => {
-            const p = (h / sum * 100).toFixed(1);
+        const visH = getVisibleHeight(c);
+        bar.innerHTML = c.heights.slice(0, c.visible).map((h, i) => {
+            const p = (h / visH * 100).toFixed(1);
             return `<div style="width:${p}%; background:${colors[i]}">${p}%</div>`;
         }).join('');
     }
@@ -406,36 +387,25 @@
 
     function renderStage() {
         const stage = document.getElementById('stage');
-        // 清除舊的角色容器
-        const oldChars = stage.querySelectorAll('.character-container');
-        oldChars.forEach(el => el.remove());
-
         const SCALE_BASE = 2.5;
         let maxDisplayH = 0;
 
-        // 計算最大顯示高度用於縮放
-        characters.forEach(c => {
-            const h = getVisibleHeight(c) * SCALE_BASE;
-            if(h > maxDisplayH) maxDisplayH = h;
-        });
+        // 清理現有角色容器 (保留標尺)
+        const containers = stage.querySelectorAll('.character-container');
+        containers.forEach(el => el.remove());
 
-        const stageAvailableH = stage.clientHeight - 160;
-        const globalScale = maxDisplayH > stageAvailableH ? stageAvailableH / maxDisplayH : 1;
-
-        // 渲染角色
         characters.forEach((c, charIdx) => {
             const charDiv = document.createElement('div');
             charDiv.className = 'character-container';
             charDiv.style.left = `calc(50% + ${c.posX}px)`;
             charDiv.style.zIndex = charIdx;
-            charDiv.style.transform = `scale(${globalScale})`;
 
+            let charH = 0;
             for(let i=0; i<c.visible; i++) {
                 const part = document.createElement('div');
                 part.className = 'part';
-                let tw, bw;
-                if(i === 0) { tw = c.widths[0]; bw = c.widths[1]; }
-                else { tw = c.widths[i+1]; bw = c.widths[i+2]; }
+                let tw = (i === 0) ? c.widths[0] : c.widths[i+1];
+                let bw = (i === 0) ? c.widths[1] : c.widths[i+2];
                 const maxW = Math.max(tw, bw);
                 const hPx = c.heights[i] * SCALE_BASE;
                 part.style.width = (maxW * SCALE_BASE) + 'px';
@@ -446,34 +416,21 @@
                 const bP = ((maxW - bw) / 2 / maxW) * 100;
                 part.style.clipPath = `polygon(${tP}% 0%, ${100-tP}% 0%, ${100-bP}% 100%, ${bP}% 100%)`;
                 charDiv.appendChild(part);
+                charH += hPx;
             }
-
             const label = document.createElement('div');
             label.className = 'height-label';
             label.innerText = `${Math.round(getVisibleHeight(c))} cm`;
             charDiv.appendChild(label);
+            if(charH > maxDisplayH) maxDisplayH = charH;
             stage.appendChild(charDiv);
         });
 
-        // 渲染尺規
-        renderRuler(globalScale * SCALE_BASE);
-    }
-
-    function renderRuler(pxPerCm) {
-        const ruler = document.getElementById('ruler');
-        ruler.innerHTML = '';
-        const MAX_RULER_H = 300; // 尺規最大 300cm
-        
-        for (let h = 0; h <= MAX_RULER_H; h += 10) {
-            const tick = document.createElement('div');
-            const isMajor = h % 50 === 0;
-            tick.className = `ruler-tick ${isMajor ? 'tick-major' : 'tick-minor'}`;
-            tick.style.bottom = (h * pxPerCm) + 'px';
-            if (isMajor) {
-                tick.innerHTML = `<span>${h}</span>`;
-            }
-            ruler.appendChild(tick);
-        }
+        // 標尺與角色同步縮放
+        const stageH = stage.clientHeight - 120;
+        const scale = maxDisplayH > stageH ? stageH / maxDisplayH : 1;
+        document.querySelectorAll('.character-container').forEach(el => el.style.transform = `scale(${scale})`);
+        document.getElementById('rulerContainer').style.transform = `scale(${scale})`;
     }
 
     function resetCurrent() {
