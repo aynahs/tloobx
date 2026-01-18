@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>專業級無比例模擬器</title>
+    <style>
+        :root {
+            --primary: #3498db;
+            --accent: #e67e22;
+            --bg: #f4f7f6;
+        }
+
+        body { 
+            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; 
+            background: var(--bg); 
+            display: flex; 
+            margin: 0; padding: 20px; 
+            height: 100vh; gap: 20px;
+        }
+
+        /* 左側控制面板 */
+        .sidebar {
+            width: 360px;
+            background: white;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            overflow-y: auto;
+            height: calc(100vh - 40px);
+        }
+
+        .control-group {
+            margin-bottom: 25px;
+            padding: 15px;
+            background: #fafafa;
+            border-radius: 12px;
+            border: 1px solid #eee;
+        }
+
+        h3 { font-size: 16px; margin: 0 0 15px 0; color: #2c3e50; display: flex; justify-content: space-between; }
+        h3 span { color: var(--primary); font-family: monospace; }
+
+        .row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        label { font-size: 13px; width: 100px; color: #666; }
+        input[type="range"] { flex: 1; cursor: pointer; }
+        input[type="number"] { width: 55px; border: 1px solid #ddd; border-radius: 4px; padding: 2px 5px; }
+
+        /* 右側預覽區 */
+        .main-view {
+            flex-grow: 1;
+            background: white;
+            border-radius: 16px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end; /* 固定底部往上增減 */
+            padding-bottom: 60px;
+            overflow: hidden;
+            border: 1px solid #e0e0e0;
+        }
+
+        /* 縮放容器：負責自動縮放比例 */
+        #zoom-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transform-origin: bottom center;
+            transition: transform 0.3s ease;
+        }
+
+        .part {
+            background-size: 100% 100%;
+            background-repeat: no-repeat;
+            background-position: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            transition: all 0.1s linear;
+            background-color: #cbd5e0;
+        }
+
+        .total-label {
+            position: absolute;
+            bottom: 20px;
+            font-size: 24px;
+            font-weight: 900;
+            color: #2c3e50;
+            background: rgba(255,255,255,0.8);
+            padding: 5px 20px;
+            border-radius: 30px;
+            border: 2px solid #2c3e50;
+        }
+
+        .btn-reset {
+            width: 100%;
+            padding: 10px;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .btn-reset:hover { background: #c0392b; }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h2 style="text-align:center; color: #2c3e50;">比例控制台</h2>
+
+    <!-- 顯示區塊數量 -->
+    <div class="control-group">
+        <h3>顯示區塊數: <span id="v-count">4</span></h3>
+        <input type="range" id="active-count" min="1" max="4" value="4" oninput="update()">
+    </div>
+
+    <!-- 總高度控制 -->
+    <div class="control-group" style="border: 2px solid var(--primary);">
+        <h3>總高度 (Total): <span id="v-total">280</span> cm</h3>
+        <input type="range" id="total-height-slider" min="50" max="600" value="280" oninput="adjustByTotal(this.value)">
+        <div class="row" style="margin-top:10px;">
+            <label>精確輸入</label>
+            <input type="number" id="total-height-num" value="280" oninput="adjustByTotal(this.value)"> cm
+        </div>
+    </div>
+
+    <!-- 區塊高度 -->
+    <div class="control-group">
+        <h3>分段高度 (cm)</h3>
+        <div class="row"><label>1.頭部</label><input type="range" id="h1" min="10" max="150" value="50" oninput="update()"><span id="vh1">50</span></div>
+        <div class="row"><label>2.軀幹</label><input type="range" id="h2" min="10" max="200" value="80" oninput="update()"><span id="vh2">80</span></div>
+        <div class="row"><label>3.髖部</label><input type="range" id="h3" min="10" max="150" value="50" oninput="update()"><span id="vh3">50</span></div>
+        <div class="row"><label>4.腿部</label><input type="range" id="h4" min="10" max="250" value="100" oninput="update()"><span id="vh4">100</span></div>
+    </div>
+
+    <!-- 接縫寬度 -->
+    <div class="control-group">
+        <h3>接縫寬度 (cm)</h3>
+        <div class="row"><label>頭頂</label><input type="range" id="w1" min="5" max="300" value="60" oninput="update()"></div>
+        <div class="row" style="color:var(--accent)"><label>頭底(頸上)</label><input type="range" id="w2a" min="5" max="300" value="80" oninput="update()"></div>
+        <div class="row" style="color:var(--accent)"><label>軀幹頂(頸下)</label><input type="range" id="w2b" min="5" max="350" value="90" oninput="update()"></div>
+        <div class="row"><label>腰部(連動)</label><input type="range" id="w3" min="5" max="400" value="120" oninput="update()"></div>
+        <div class="row"><label>髖底(連動)</label><input type="range" id="w4" min="5" max="400" value="100" oninput="update()"></div>
+        <div class="row"><label>腳底</label><input type="range" id="w5" min="5" max="300" value="60" oninput="update()"></div>
+    </div>
+
+    <div class="control-group">
+        <h3>圖片與重置</h3>
+        <input type="file" multiple onchange="loadImages(event)">
+        <button class="btn-reset" onclick="clearAllImages()">解除所有圖片</button>
+    </div>
+</div>
+
+<div class="main-view" id="viewport">
+    <div id="zoom-container">
+        <div id="p1" class="part" style="background-color: #e74c3c;">頭部</div>
+        <div id="p2" class="part" style="background-color: #3498db;">軀幹</div>
+        <div id="p3" class="part" style="background-color: #9b59b6;">髖部</div>
+        <div id="p4" class="part" style="background-color: #2ecc71;">腿部</div>
+    </div>
+    <div class="total-label" id="label-total">180 cm</div>
+</div>
+
+<script>
+    const SCALE_BASE = 2; // 1cm = 2px
+    const VIEWPORT_MARGIN = 100;
+
+    function update() {
+        const count = parseInt(document.getElementById('active-count').value);
+        document.getElementById('v-count').innerText = count;
+
+        const h = [
+            parseInt(document.getElementById('h1').value),
+            parseInt(document.getElementById('h2').value),
+            parseInt(document.getElementById('h3').value),
+            parseInt(document.getElementById('h4').value)
+        ];
+
+        const w = {
+            p1t: parseInt(document.getElementById('w1').value),
+            p1b: parseInt(document.getElementById('w2a').value),
+            p2t: parseInt(document.getElementById('w2b').value),
+            p2b: parseInt(document.getElementById('w3').value),
+            p3t: parseInt(document.getElementById('w3').value), // 連動腰部
+            p3b: parseInt(document.getElementById('w4').value),
+            p4t: parseInt(document.getElementById('w4').value), // 連動髖底
+            p4b: parseInt(document.getElementById('w5').value)
+        };
+
+        let currentTotalHeight = 0;
+
+        // 更新各區塊
+        for (let i = 1; i <= 4; i++) {
+            const el = document.getElementById(`p${i}`);
+            const valDisplay = document.getElementById(`vh${i}`);
+            
+            if (i <= count) {
+                el.style.display = 'flex';
+                valDisplay.innerText = h[i-1];
+                currentTotalHeight += h[i-1];
+
+                // 決定該區塊的寬度
+                let topW, botW;
+                if(i===1) { topW = w.p1t; botW = w.p1b; }
+                else if(i===2) { topW = w.p2t; botW = w.p2b; }
+                else if(i===3) { topW = w.p3t; botW = w.p3b; }
+                else if(i===4) { topW = w.p4t; botW = w.p4b; }
+
+                const maxW = Math.max(topW, botW);
+                el.style.width = (maxW * SCALE_BASE) + 'px';
+                el.style.height = (h[i-1] * SCALE_BASE) + 'px';
+
+                // Clip Path 計算
+                const tP = ((maxW - topW) / 2 / maxW) * 100;
+                const bP = ((maxW - botW) / 2 / maxW) * 100;
+                el.style.clipPath = `polygon(${tP}% 0%, ${100-tP}% 0%, ${100-bP}% 100%, ${bP}% 100%)`;
+            } else {
+                el.style.display = 'none';
+                valDisplay.innerText = "0";
+            }
+        }
+
+        // 更新總高度數值顯示
+        document.getElementById('v-total').innerText = currentTotalHeight;
+        document.getElementById('label-total').innerText = currentTotalHeight + " cm";
+        document.getElementById('total-height-slider').value = currentTotalHeight;
+        document.getElementById('total-height-num').value = currentTotalHeight;
+
+        // 自動縮放邏輯
+        autoScale(currentTotalHeight * SCALE_BASE);
+    }
+
+    // 依據總高度自動按比例分配高度
+    function adjustByTotal(newTotal) {
+        newTotal = parseInt(newTotal);
+        if (isNaN(newTotal) || newTotal <= 0) return;
+
+        const count = parseInt(document.getElementById('active-count').value);
+        let currentH = [];
+        let sum = 0;
+        for(let i=1; i<=count; i++) {
+            let val = parseInt(document.getElementById(`h${i}`).value);
+            currentH.push(val);
+            sum += val;
+        }
+
+        if(sum === 0) sum = 1; // 防止除以0
+        const ratio = newTotal / sum;
+
+        for(let i=1; i<=count; i++) {
+            const newVal = Math.max(10, Math.round(currentH[i-1] * ratio));
+            document.getElementById(`h${i}`).value = newVal;
+        }
+        update();
+    }
+
+    // 當高度超出畫面時縮小比例
+    function autoScale(actualPxHeight) {
+        const viewportH = document.getElementById('viewport').clientHeight - VIEWPORT_MARGIN;
+        const zoomContainer = document.getElementById('zoom-container');
+        
+        if (actualPxHeight > viewportH) {
+            const factor = viewportH / actualPxHeight;
+            zoomContainer.style.transform = `scale(${factor})`;
+        } else {
+            zoomContainer.style.transform = `scale(1)`;
+        }
+    }
+
+    // 圖片功能
+    function loadImages(e) {
+        const files = e.target.files;
+        for(let i=0; i<files.length && i<4; i++) {
+            const reader = new FileReader();
+            const partId = `p${i+1}`;
+            reader.onload = (event) => {
+                const el = document.getElementById(partId);
+                el.style.backgroundImage = `url(${event.target.result})`;
+                el.innerText = "";
+            };
+            reader.readAsDataURL(files[i]);
+        }
+    }
+
+    function clearAllImages() {
+        const names = ["頭部", "軀幹", "髖部", "腿部"];
+        for(let i=1; i<=4; i++) {
+            const el = document.getElementById(`p${i}`);
+            el.style.backgroundImage = 'none';
+            el.innerText = names[i-1];
+        }
+    }
+
+    // 視窗大小改變時重新計算縮放
+    window.onresize = update;
+
+    // 初始化
+    update();
+</script>
+
+</body>
+</html>
