@@ -430,28 +430,54 @@ scrollbar-color: #000077 #bada55;
     }
 
     /* 載入控制項：範圍統一為 1~100 */
-    function loadControls() {
-        const c = characters[activeIdx];
-        document.getElementById('controls').style.display = 'block';
-        document.getElementById('posX').value = c.posX;
-        document.getElementById('v-posX').innerText = c.posX;
-        
-        // 總身高輸入
-        document.getElementById('totalH').value = c.targetH;
-        document.getElementById('totalHNum').value = Math.round(c.targetH);
-        
-        document.getElementById('visibleCount').value = c.visible;
-        document.getElementById('v-visible').innerText = c.visible;
+   
+   
+   
+   
+   
+   
+   
+ function loadControls() {
+    const c = characters[activeIdx];
+    document.getElementById('controls').style.display = 'block';
+    document.getElementById('posX').value = c.posX;
+    document.getElementById('v-posX').innerText = c.posX;
+    
+    document.getElementById('totalH').value = c.targetH;
+    document.getElementById('totalHNum').value = Math.round(c.targetH);
+    
+    document.getElementById('visibleCount').value = c.visible;
+    document.getElementById('v-visible').innerText = c.visible;
 
-        // 高度滑桿 (百分比)
-        const hDiv = document.getElementById('heightSliders');
-        hDiv.innerHTML = c.heights.map((h, i) => `
+    // 高度滑桿：從百分比改為 cm
+    const hDiv = document.getElementById('heightSliders');
+    hDiv.innerHTML = c.heights.map((h, i) => {
+        const cmVal = (h / 100 * c.targetH).toFixed(1); // 計算當前 cm
+        return `
             <div class="row" style="display: ${i < c.visible ? 'flex' : 'none'}">
                 <label>${partNames[i]}</label>
-                <input type="range" min="1" max="100" step="0.1" value="${h}" class="h-slider" oninput="adjustPartHeight(${i}, this.value)">
-                <span class="val-text">${Math.round(h)}%</span>
+                <input type="range" 
+                    min="1" 
+                    max="${c.targetH}" 
+                    step="0.1" 
+                    value="${cmVal}" 
+                    class="h-slider" 
+                    oninput="adjustPartHeightCM(${i}, this.value)">
+                <span class="val-text">${cmVal} cm</span>
             </div>
-        `).join('');
+        `;
+    }).join('');
+      
+      
+   
+   
+   
+   
+   
+   
+  
+      
+      
 
         // 寬度滑桿 (1-100)
         const wDiv = document.getElementById('widthSliders');
@@ -474,17 +500,38 @@ scrollbar-color: #000077 #bada55;
         `).join('');
         updatePercentBar();
     }
+   
+   
+   
+   
+   
+         function adjustPartHeightCM(idx, newValCm) {
+    const c = characters[activeIdx];
+    // 將輸入的 cm 轉回百分比 (例如: 45cm / 180cm * 100 = 25%)
+    const newValPercent = (parseFloat(newValCm) / c.targetH) * 100;
+    
+    // 呼叫原本處理百分比分配的邏輯
+    adjustPartHeight(idx, newValPercent);
+}
+    
+   
+   
 
-    function syncUISliders() {
-        const c = characters[activeIdx];
-        const hSliders = document.querySelectorAll('.h-slider');
-        const hTexts = document.querySelector('#heightSliders').querySelectorAll('.val-text');
-        c.heights.forEach((h, i) => {
-            if (hSliders[i]) hSliders[i].value = h;
-            if (hTexts[i]) hTexts[i].innerText = Math.round(h) + '%';
-        });
-        updatePercentBar();
-    }
+function syncUISliders() {
+    const c = characters[activeIdx];
+    const hSliders = document.querySelectorAll('.h-slider');
+    const hTexts = document.querySelector('#heightSliders').querySelectorAll('.val-text');
+    
+    c.heights.forEach((h, i) => {
+        const cmVal = (h / 100 * c.targetH).toFixed(1);
+        if (hSliders[i]) {
+            hSliders[i].value = cmVal;
+            hSliders[i].max = c.targetH; // 確保 max 隨總身高更新
+        }
+        if (hTexts[i]) hTexts[i].innerText = cmVal + ' cm';
+    });
+    updatePercentBar();
+}
 
     function updateCharBasic(key, val) {
         characters[activeIdx][key] = parseInt(val);
@@ -540,13 +587,16 @@ scrollbar-color: #000077 #bada55;
     }
 
     /* 更新總身高：現在只改數值，不影響部位比例 */
-    function updateTotalH(val) {
-        if (val === "" || isNaN(val) || val <= 0) return;
-        characters[activeIdx].targetH = parseFloat(val);
-        document.getElementById('totalH').value = val;
-        document.getElementById('totalHNum').value = Math.round(val);
-        renderStage();
-    }
+function updateTotalH(val) {
+    if (val === "" || isNaN(val) || val <= 0) return;
+    characters[activeIdx].targetH = parseFloat(val);
+    document.getElementById('totalH').value = val;
+    document.getElementById('totalHNum').value = Math.round(val);
+    
+    // 關鍵：重新加載控制項以更新滑桿的 max 值與 cm 顯示
+    loadControls(); 
+    renderStage();
+}
 
     function updateCharWidth(i, val) {
         characters[activeIdx].widths[i] = parseInt(val);
