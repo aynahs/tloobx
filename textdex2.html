@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>角色比例模擬器</title>
+    <style>
+        :root {
+            --bg-color: #f5f6fa;
+            --panel-color: #ffffff;
+            --accent-color: #3498db;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* 左側控制面板 */
+        #sidebar {
+            width: 350px;
+            background: var(--panel-color);
+            border-right: 1px solid #ddd;
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+            overflow-y: auto;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+        }
+
+        .tab-container {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 8px 12px;
+            background: #eee;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .tab.active {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .btn-group {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 5px;
+        }
+
+        button {
+            padding: 6px 12px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            background: #95a5a6;
+            color: white;
+        }
+
+        button.add-btn { background: #2ecc71; }
+        button.del-btn { background: #e74c3c; }
+
+        /* 滑桿樣式 */
+        .section-title {
+            font-weight: bold;
+            margin: 15px 0 10px;
+            border-bottom: 2px solid var(--accent-color);
+            padding-bottom: 3px;
+        }
+
+        .row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .row label { width: 90px; }
+        .row input[type="range"] { flex: 1; margin: 0 10px; }
+        .row .val-text { width: 35px; text-align: right; }
+
+        /* 比例條 */
+        #percentBar {
+            display: flex;
+            height: 25px;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 10px 0;
+            font-size: 10px;
+            color: white;
+            text-align: center;
+            line-height: 25px;
+        }
+
+        /* 右側繪圖區 */
+        #main {
+            flex: 1;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #stage {
+            flex: 1;
+            background: #fff;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: flex-end; /* 底部對齊 */
+            justify-content: center;
+            padding-bottom: 50px;
+        }
+
+        .character-container {
+            position: absolute;
+            bottom: 80px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transform-origin: bottom center;
+            transition: transform 0.2s;
+        }
+
+        .part {
+            background-size: cover;
+            background-position: center;
+            margin-bottom: -1px; /* 消除縫隙 */
+        }
+
+        .height-label {
+            position: absolute;
+            bottom: -30px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        /* 簡易標尺 */
+        #rulerContainer {
+            position: absolute;
+            left: 20px;
+            bottom: 80px;
+            width: 40px;
+            border-right: 2px solid #333;
+            height: 800px;
+            display: flex;
+            flex-direction: column-reverse;
+            transform-origin: bottom;
+        }
+
+        .ruler-tick {
+            border-bottom: 1px solid #aaa;
+            width: 10px;
+            height: 50px; /* 每 50cm 一格 */
+            position: relative;
+        }
+
+        .ruler-tick::after {
+            content: attr(data-val);
+            position: absolute;
+            right: 15px;
+            bottom: -7px;
+            font-size: 10px;
+        }
+
+/* ============================================================================= */
+        
+/* --- 1. 捲軸樣式 (Scrollbar) --- */
+/* Firefox 支援 */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: #555 #222;
+}
+
+/* Chrome, Edge, Safari 支援 */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #222;
+}
+::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #777;
+}
+
+/* --- 2. 數字與文字輸入框樣式 (Input Box) --- */
+input[type="number"], 
+input[type="text"] {
+    background-color: #2c3e50;
+    border: 1px solid #455a64;
+    color: #ecf0f1;
+    padding: 5px 8px;
+    border-radius: 4px;
+    outline: none;
+    transition: border 0.3s;
+}
+input[type="number"]:focus {
+    border-color: #3498db;
+}
+
+/* --- 3. 滑桿樣式 (Range Slider) --- */
+input[type="range"] {
+    -webkit-appearance: none; /* 隱藏系統預設外觀 */
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+    width: 100%;
+}
+
+/* 滑桿軌道 - Webkit */
+input[type="range"]::-webkit-slider-runnable-track {
+    background: #34495e;
+    height: 6px;
+    border-radius: 3px;
+}
+/* 滑桿軌道 - Firefox */
+input[type="range"]::-moz-range-track {
+    background: #34495e;
+    height: 6px;
+    border-radius: 3px;
+}
+
+/* 滑桿控制紐 (圓點) - Webkit */
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    margin-top: -5px; /* 使圓點居中 */
+    background-color: #3498db;
+    height: 16px;
+    width: 16px;
+    border-radius: 50%;
+    border: 2px solid #ecf0f1;
+    transition: transform 0.1s;
+}
+/* 滑桿控制紐 (圓點) - Firefox */
+input[type="range"]::-moz-range-thumb {
+    background-color: #3498db;
+    height: 14px;
+    width: 14px;
+    border-radius: 50%;
+    border: 2px solid #ecf0f1;
+    transition: transform 0.1s;
+}
+
+/* 滑桿互動效果 */
+input[type="range"]:active::-webkit-slider-thumb {
+    transform: scale(1.2);
+    background-color: #2980b9;
+}
+input[type="range"]:active::-moz-range-thumb {
+    transform: scale(1.2);
+    background-color: #2980b9;
+}
+
+/* --- 4. 檔案上傳按鈕樣式 (File Upload) --- */
+/* 使用 ::file-selector-button 偽元素 (現代瀏覽器通用) */
+input[type="file"]::file-selector-button {
+    background-color: #34495e;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.3s;
+    font-size: 12px;
+    margin-right: 10px;
+}
+
+input[type="file"]::file-selector-button:hover {
+    background-color: #2c3e50;
+}
+
+/* 火狐專用檔案上傳樣式修正 */
+input[type="file"]::-moz-browse-button {
+    background-color: #34495e;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 4px;
+    border: none;
+}
+
+/* ============================================================================= */
+
+    </style>
+</head>
+<body>
+
+<div id="sidebar">
+    <div class="tab-container" id="charTabs"></div>
+    <div class="btn-group">
+        <button class="add-btn" onclick="addCharacter()">新增角色</button>
+        <button class="del-btn" onclick="deleteCharacter()">刪除角色</button>
+        <button onclick="resetCurrent()">重設</button>
+    </div>
+
+    <div id="controls">
+        <div class="section-title">基本設定</div>
+        <div class="row">
+            <label>水平位置</label>
+            <input type="range" id="posX" min="-400" max="400" step="1" oninput="updateCharBasic('posX', this.value)">
+            <span class="val-text" id="v-posX">0</span>
+        </div>
+        <div class="row">
+            <label>顯示部位</label>
+            <input type="range" id="visibleCount" min="1" max="5" step="1" oninput="updateVisibleCount(this.value)">
+            <span class="val-text" id="v-visible">5</span>
+        </div>
+        <div class="row">
+            <label>總高度 (cm)</label>
+            <input type="range" id="totalH" min="50" max="250" step="1" oninput="updateTotalH(this.value)">
+            <input type="number" id="totalHNum" style="width:50px" onchange="updateTotalH(this.value)">
+        </div>
+
+        <div class="section-title">垂直比例 (cm)</div>
+        <div id="percentBar"></div>
+        <div id="heightSliders"></div>
+
+        <div class="section-title">寬度設定</div>
+        <div id="widthSliders"></div>
+
+        <div class="section-title">貼圖上傳</div>
+        <div id="imgUploads"></div>
+    </div>
+</div>
+
+<div id="main">
+    <div id="stage">
+        <!-- 標尺 -->
+        <div id="rulerContainer">
+            <div class="ruler-tick" data-val="50"></div>
+            <div class="ruler-tick" data-val="100"></div>
+            <div class="ruler-tick" data-val="150"></div>
+            <div class="ruler-tick" data-val="200"></div>
+            <div class="ruler-tick" data-val="250"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    /* 定義全域常數：部位名稱、寬度名稱與預設顏色 */
+    const partNames = ["頭部", "軀幹", "髖部", "大腿", "小腿"];
+    const widthNames = ["頭頂", "頭底", "頸部(軀幹頂)", "腰部", "髖部底", "膝蓋", "腳底"];
+    const colors = ["#e74c3c", "#3498db", "#f1c40f", "#2ecc71", "#9b59b6"];
+
+    /* 初始化單一角色的預設數據結構 */
+    function createDefaultChar(name) {
+        return {
+            name: name, 
+            posX: 0, 
+            visible: 5, // 預設顯示部位數量
+            heights: [30, 50, 25, 40, 35], // 各部位高度 (比例單位)
+            widths: [50, 65, 70, 100, 90, 70, 50], // 各連接處寬度
+            imgs: [null, null, null, null, null] // 儲存上傳圖檔的 Base64 碼
+        };
+    }
+
+    /* 角色清單與當前選中角色的索引 */
+    let characters = [createDefaultChar("角色 1")];
+    let activeIdx = 0;
+
+    /* 計算當前角色「可見部位」的總高度 */
+    function getVisibleHeight(c) {
+        return c.heights.slice(0, c.visible).reduce((a, b) => a + b, 0);
+    }
+
+    /* 程式入口：初始化 UI 並渲染畫面 */
+    function init() {
+        renderTabs();
+        loadControls(); 
+        renderStage();
+    }
+
+    /* 渲染上方的角色切換標籤 */
+    function renderTabs() {
+        const container = document.getElementById('charTabs');
+        container.innerHTML = characters.map((c, i) => `
+            <div class="tab ${i === activeIdx ? 'active' : ''}" onclick="switchChar(${i})">${c.name}</div>
+        `).join('');
+    }
+
+    /* 切換角色時重新載入對應的控制項與預覽 */
+    function switchChar(idx) {
+        activeIdx = idx;
+        renderTabs(); loadControls(); renderStage();
+    }
+
+    /* 新增角色並設定初始偏移位置 */
+    function addCharacter() {
+        const newChar = createDefaultChar("角色 " + (characters.length + 1));
+        newChar.posX = (characters.length) * 120 - 100; 
+        characters.push(newChar);
+        activeIdx = characters.length - 1;
+        init();
+    }
+
+    /* 刪除當前角色 (至少保留一個) */
+    function deleteCharacter() {
+        if(characters.length <= 1) return alert("至少保留一個角色");
+        characters.splice(activeIdx, 1);
+        activeIdx = 0;
+        init();
+    }
+
+    /* 載入當前角色的數值到左側控制面板 (拉桿、數字輸入框、圖片上傳器) */
+    function loadControls() {
+        const c = characters[activeIdx];
+        const visH = getVisibleHeight(c);
+        document.getElementById('controls').style.display = 'block';
+        document.getElementById('posX').value = c.posX;
+        document.getElementById('v-posX').innerText = c.posX;
+        document.getElementById('totalH').value = visH;
+        document.getElementById('totalHNum').value = Math.round(visH);
+        document.getElementById('visibleCount').value = c.visible;
+        document.getElementById('v-visible').innerText = c.visible;
+
+        /* 動態生成高度調整拉桿 */
+        const hDiv = document.getElementById('heightSliders');
+        hDiv.innerHTML = c.heights.map((h, i) => `
+            <div class="row" style="display: ${i < c.visible ? 'flex' : 'none'}">
+                <label>${partNames[i]}</label>
+                <input type="range" min="5" max="150" step="0.1" value="${h}" class="h-slider" oninput="adjustPartHeight(${i}, this.value)">
+                <span class="val-text">${Math.round(h)}</span>
+            </div>
+        `).join('');
+
+        /* 動態生成寬度調整拉桿 (根據可見部位數量連動顯示) */
+        const wDiv = document.getElementById('widthSliders');
+        wDiv.innerHTML = c.widths.map((w, i) => {
+            let show = (i <= 1 && c.visible >= 1) || (i <= 3 && c.visible >= 2) || (i === 4 && c.visible >= 3) || (i === 5 && c.visible >= 4) || (i === 6 && c.visible >= 5);
+            return `
+                <div class="row" style="display: ${show ? 'flex' : 'none'}">
+                    <label>${widthNames[i]}</label>
+                    <input type="range" min="5" max="250" value="${w}" class="w-slider" oninput="updateCharWidth(${i}, this.value)">
+                    <span class="val-text">${w}</span>
+                </div>
+            `;
+        }).join('');
+
+        /* 動態生成圖片上傳按鈕 */
+        const iDiv = document.getElementById('imgUploads');
+        iDiv.innerHTML = partNames.map((name, i) => `
+            <div class="row" style="display: ${i < c.visible ? 'flex' : 'none'}">
+                <label>${name}</label><input type="file" style="font-size:10px" onchange="uploadImg(event, ${i})">
+            </div>
+        `).join('');
+        updatePercentBar();
+    }
+
+    /* 同步資料與 UI 上的拉桿數值 (用於高度調整後維持 UI 一致) */
+    function syncUISliders() {
+        const c = characters[activeIdx];
+        const visH = getVisibleHeight(c);
+        const hSliders = document.querySelectorAll('.h-slider');
+        const hTexts = document.querySelector('#heightSliders').querySelectorAll('.val-text');
+        c.heights.forEach((h, i) => {
+            if (hSliders[i]) hSliders[i].value = h;
+            if (hTexts[i]) hTexts[i].innerText = Math.round(h);
+        });
+        document.getElementById('totalH').value = visH;
+        document.getElementById('totalHNum').value = Math.round(visH);
+        updatePercentBar();
+    }
+
+    /* 更新基本數值 (例如：左右偏移) */
+    function updateCharBasic(key, val) {
+        characters[activeIdx][key] = parseInt(val);
+        document.getElementById('v-'+key).innerText = val;
+        renderStage();
+    }
+
+    /* 更新顯示部位的數量 (由頭部往下遞增) */
+    function updateVisibleCount(val) {
+        characters[activeIdx].visible = parseInt(val);
+        loadControls(); renderStage();
+    }
+
+    /* 核心邏輯：調整單一部位高度，並「補償」其他部位以維持總高度不變 */
+    function adjustPartHeight(idx, newVal) {
+        newVal = parseFloat(newVal);
+        const c = characters[activeIdx];
+        const oldVisH = getVisibleHeight(c);
+        c.heights[idx] = newVal;
+        const otherVis = [];
+        for(let i=0; i<c.visible; i++) if(i !== idx) otherVis.push(i);
+        if(otherVis.length > 0) {
+            const currentVisSum = getVisibleHeight(c);
+            const gap = (oldVisH - currentVisSum) / otherVis.length;
+            otherVis.forEach(oi => {
+                c.heights[oi] += gap;
+                if(c.heights[oi] < 5) c.heights[oi] = 5; // 限制最小高度
+            });
+        }
+        syncUISliders(); renderStage();
+    }
+
+    /* 整體縮放：根據目標總高度，按比例縮放所有可見部位 */
+    function updateTotalH(val) {
+        if(!val || val < 1) return;
+        val = parseFloat(val);
+        const c = characters[activeIdx];
+        const currentVisH = getVisibleHeight(c);
+        const ratio = val / currentVisH;
+        for(let i=0; i<c.visible; i++) c.heights[i] *= ratio;
+        syncUISliders(); renderStage();
+    }
+
+    /* 更新特定接點的寬度數據 */
+    function updateCharWidth(i, val) {
+        characters[activeIdx].widths[i] = parseInt(val);
+        const wTexts = document.querySelector('#widthSliders').querySelectorAll('.val-text');
+        if(wTexts[i]) wTexts[i].innerText = val;
+        renderStage();
+    }
+
+    /* 更新 UI 下方的彩色比例條 (顯示各部位百分比) */
+    function updatePercentBar() {
+        const c = characters[activeIdx];
+        const bar = document.getElementById('percentBar');
+        const visH = getVisibleHeight(c);
+        bar.innerHTML = c.heights.slice(0, c.visible).map((h, i) => {
+            const p = (h / visH * 100).toFixed(1);
+            return `<div style="width:${p}%; background:${colors[i]}">${p}%</div>`;
+        }).join('');
+    }
+
+    /* 處理圖片上傳，轉換為 DataURL 並存入角色數據 */
+    function uploadImg(e, partIdx) {
+        const file = e.target.files[0];
+        if(file) {
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                characters[activeIdx].imgs[partIdx] = ev.target.result;
+                renderStage();
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    /* 繪圖引擎：根據數據動態生成 HTML 元素與 clip-path (梯形效果) */
+    function renderStage() {
+        const stage = document.getElementById('stage');
+        const SCALE_BASE = 2.5; // 基本顯示比例
+        let maxDisplayH = 0;
+
+        /* 清理現有角色容器並保留標尺背景 */
+        const containers = stage.querySelectorAll('.character-container');
+        containers.forEach(el => el.remove());
+
+        /* 遍歷所有角色進行繪製 */
+        characters.forEach((c, charIdx) => {
+            const charDiv = document.createElement('div');
+            charDiv.className = 'character-container';
+            charDiv.style.left = `calc(50% + ${c.posX}px)`;
+            charDiv.style.zIndex = charIdx;
+
+            let charH = 0;
+            for(let i=0; i<c.visible; i++) {
+                const part = document.createElement('div');
+                part.className = 'part';
+                
+                /* 決定部位的頂部與底部寬度 */
+                let tw = (i === 0) ? c.widths[0] : c.widths[i+1];
+                let bw = (i === 0) ? c.widths[1] : c.widths[i+2];
+                const maxW = Math.max(tw, bw);
+                const hPx = c.heights[i] * SCALE_BASE;
+
+                part.style.width = (maxW * SCALE_BASE) + 'px';
+                part.style.height = hPx + 'px';
+                
+                /* 設置背景圖或純色 */
+                if(c.imgs[i]) part.style.backgroundImage = `url(${c.imgs[i]})`;
+                else part.style.backgroundColor = colors[i];
+                
+                /* 使用 clip-path 剪裁出梯形形狀 */
+                const tP = ((maxW - tw) / 2 / maxW) * 100;
+                const bP = ((maxW - bw) / 2 / maxW) * 100;
+                part.style.clipPath = `polygon(${tP}% 0%, ${100-tP}% 0%, ${100-bP}% 100%, ${bP}% 100%)`;
+                
+                charDiv.appendChild(part);
+                charH += hPx;
+            }
+            
+            /* 顯示身高標籤 */
+            const label = document.createElement('div');
+            label.className = 'height-label';
+            label.innerText = `${Math.round(getVisibleHeight(c))} cm`;
+            charDiv.appendChild(label);
+            
+            if(charH > maxDisplayH) maxDisplayH = charH;
+            stage.appendChild(charDiv);
+        });
+
+        /* 自動縮放邏輯：如果角色超出視窗高度，整體縮放以符合容器 */
+        const stageH = stage.clientHeight - 120;
+        const scale = maxDisplayH > stageH ? stageH / maxDisplayH : 1;
+        document.querySelectorAll('.character-container').forEach(el => el.style.transform = `scale(${scale})`);
+        document.getElementById('rulerContainer').style.transform = `scale(${scale})`;
+    }
+
+    /* 將當前角色數據重設為初始值 */
+    function resetCurrent() {
+        const name = characters[activeIdx].name;
+        characters[activeIdx] = createDefaultChar(name);
+        init();
+    }
+
+    /* 視窗大小改變時重新渲染預覽 */
+    window.onresize = renderStage;
+    
+    /* 啟動程式 */
+    init();
+</script>
+
+</body>
+</html>
