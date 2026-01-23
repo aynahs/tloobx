@@ -9,96 +9,96 @@
 
     <style> 
  :root {
-     --primary: #3498db;
-     --panel-bg: #ffffff;
-     --accent: #e67e22;
-     --ruler-color: #555;
      /* 定義新的比例：1cm = 3.5px (200cm = 700px) */
      --scale-factor: 3.5;
+     --co01: rgb(230, 100, 100);     /* 鉛丹 */
+     --co02: rgb(230, 230, 230);     /* 白灰 */
+     --co03: rgb(195, 200, 210);     /* 淺灰 */
+     --co04: rgb(010, 035, 060);     /* 濃藍 */
+     --co05: rgb(055, 095, 130);     /* 深藍 */
+     --co06: rgb(080, 120, 160);     /* 灰藍 */
+     --co07: rgb(125, 160, 190);     /* 淺藍 */
  }
  body {
-     font-family: "Micro 5", "DotGothic16", sans-serif;
-     font-size: 16px;
+     font-family: "Micro 5", "LINE Seed JP", sans-serif;
+     font-size: 18px;
      font-size-adjust: 0.5;
-     background: #f0f3f5;
+     /* ----------- */
+     background-image: radial-gradient(var(--co02) 1px, transparent 1px);
+     background-size: 35px 35px;
+     background-color: var(--co03);
+     /* ----------- */
      display: flex;
      margin: 0;
      padding: 0;
      height: 100vh;
      overflow: hidden;
  }
- /* 左側控制面板 */
-
+ /* 左側選單 */
  .sidebar {
      position: absolute;
      height: auto;
      width: 250px;
      left: 15px;
      top: 15px;
-     max-height: 90%;
-     background: #DCD;
-     padding: 15px;
+     max-height: 95%;
+     padding: 0px;
      overflow-y: auto;
      display: flex;
      flex-direction: column;
      z-index: 100;
-scrollbar-width: none;
+     scrollbar-width: none;
+     background: linear-gradient(to right, var(--co01) 6%, var(--co02) 6%);
+     border: 5px solid var(--co04);
  }
+ summary {
+     background: var(--co04);
+     color: var(--co02);
+ }
+ details[open] summary {}
  .char-tabs {
      display: flex;
-     gap: 5px;
-     margin-bottom: 15px;
+     gap: 6px;
      overflow-x: auto;
-     padding-bottom: 5px;
- /* 捲軸-Firefox */
-scrollbar-width: thin;
-scrollbar-color: #000077 #bada55;
+     padding-bottom: 8px;
+     /* 捲軸-Firefox */
+     scrollbar-width: thin;
+     scrollbar-color: var(--co04) var(--co07);
  }
  .tab {
-     padding: 8px 12px;
-     background: #eee;
-     border-radius: 5px;
+     padding: 2px 8px;
+     background: var(--co07);
+     border-radius: 0px;
      cursor: pointer;
      white-space: nowrap;
  }
  .tab.active {
-     background: var(--primary);
-     color: white;
+     background: var(--co05);
+     color: var(--co02);
  }
+ /* 按鈕 */
  button {
-     font-family: "Micro 5", "DotGothic16";
-     padding: 6px 12px;
-     cursor: pointer;
+     font-family: "Micro 5";
+     font-size-adjust: 0.5;
      border: none;
-     border-radius: 4px;
-     background: #95a5a6;
-     color: white;
+     font-size: 20px;
+     color: var(--co02);
+     height: 40px;
+     width: 40px;
  }
- button.a {
-     background: #2ecc71;
- }
- button.d {
-     background: #e74c3c;
- }
- button.r {
-     background: #e74c3c;
- }
- button:hover {
-     background: #fff;
- }
+ button.a {     background: var(--co05); }
+ button.d {     background: var(--co01); }
+ button.r {     background: var(--co06); }
+ button:hover {     filter: hue-rotate(90deg); }
  /* 右側繪圖區 */
-
  .main-view {
      width: 100vw;
      height: 100vh;
-     background: #d1d8e0;
-     background-image: linear-gradient(#ffffff 1px, transparent 1px), linear-gradient(90deg, #ffffff 1px, transparent 1px);
-     background-size: 40px 40px;
      display: flex;
      flex-direction: column;
      align-items: center;
      justify-content: flex-end;
-     padding-bottom: 60px;
+     padding-bottom: 0px;
      position: relative;
      z-index: 1;
  }
@@ -111,8 +111,17 @@ scrollbar-color: #000077 #bada55;
      align-items: flex-end;
  }
  /* 標尺容器 (200cm 基準) */
-
- .ruler-container {
+ .horiz {
+     position: absolute;
+     bottom: 60px;
+     right: 50px;
+     width: 100%;
+     height: 2px;
+     background: var(--co07);
+     z-index: 1;
+     pointer-events: none;
+ }
+ .rulerbox {
      position: absolute;
      right: 10px;
      bottom: 60px;
@@ -123,41 +132,14 @@ scrollbar-color: #000077 #bada55;
      pointer-events: none;
      z-index: 5;
  }
- /*
- .ruler-container::after {
-    border-bottom: 1px solid red;
-    content: '';
-    position: absolute;
-    right: 80px;
-    width: 100%;
-    height: 1px;
-    bottom: 0px;
-    background: red;
- }
-*/
-
- .horiz {
-     position: absolute;
-     bottom: 60px;
-     right: 80px;
-     width: 100%;
-     /* 區塊寬度 */
-     height: 0.8px;
-     /* 區塊高度 */
-     background: red;
-     z-index: 3;
-     /* 放在文字下方 */
-     pointer-events: none;
- }
  .ruler {
      width: 100%;
      height: 100%;
      position: relative;
      /* 10cm = 35px, 50cm = 175px */
-     background-image: 
-     repeating-linear-gradient(0deg, var(--ruler-color) 0 1px, transparent 0 35px), 
-     repeating-linear-gradient(0deg, var(--ruler-color) 0 2px, transparent 0 175px);
-     background-size: 5px, 15px;
+     background-image: repeating-linear-gradient(0deg, var(--co06) 0 1px, transparent 0 35px), 
+repeating-linear-gradient(0deg, var(--co06) 0 2px, transparent 0 175px);
+     background-size: 5px, 10px;
      background-repeat: no-repeat;
      background-position: right top;
      display: flex;
@@ -165,7 +147,6 @@ scrollbar-color: #000077 #bada55;
      justify-content: space-between;
      counter-reset: ruler-val -50;
  }
-
  /* 數字標籤節點 */
  .ruler div {
      counter-increment: ruler-val 50;
@@ -173,18 +154,17 @@ scrollbar-color: #000077 #bada55;
      width: 100%;
      height: 0;
  }
-
  /* 顯示數字文字 */
  .ruler div::before {
      content: counter(ruler-val);
      position: absolute;
-     right: 35px;
-     bottom: -0.6em;
-     color: var(--ruler-color);
+     right: 15px;
+     bottom: -0.7em;
+     color: var(--co06);
      text-align: right;
      width: 30px;
+     font-size: 14px;
  }
-
  /* 角色位置 */
  .character-container {
      position: absolute;
@@ -196,121 +176,96 @@ scrollbar-color: #000077 #bada55;
      transform: translateX(-50%) scale(1);
      pointer-events: none;
  }
+ /* 肖像區塊 */
  .part {
-     background-size: 100% 100%;
-     background-repeat: no-repeat;
-     background-position: center;
-     display: flex;
-     align-items: center;
-     justify-content: center;
-     color: white;
-     font-weight: bold;
-     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
-     background-color: rgba(189, 195, 199, 0.8);
      pointer-events: auto;
+     margin-top: -1px;
  }
  /*下方高度標籤*/
-
  .height-label {
      position: absolute;
      bottom: -35px;
-     background: rgba(0, 0, 0, 0.6);
-     color: white;
-     padding: 2px 12px;
-     border-radius: 10px;
+     background: var(--co06);
+     color: var(--co02);
+     padding: 0px 8px;
+     border-radius: 0px;
      white-space: nowrap;
      pointer-events: none;
+     font-size: 14px;
  }
- .section {
-     margin-bottom: 15px;
-     padding: 12px;
-     background: #fafafa;
-     border-radius: 8px;
-     border: 1px solid #eee;
- }
- h4 {
-     margin: 0 0 10px 0;
-     border-left: 4px solid var(--primary);
-     padding-left: 8px;
- }
+ /* ------------------------------------- */
+ /* 段落區塊 */
+ .section {     padding: 6px 10px 6px 25px; }
+ hr {     color: var(--co01); }
+ /* 每一橫 */
  .row {
      display: flex;
      align-items: center;
      gap: 8px;
-     margin-bottom: 8px;
+     height: 24px;
  }
  .row label {
      width: 15%;
-     font-weight: bold;
+     color: var(--co04);
  }
- input[type="range"] {
-     flex: 1;
- }
+ input[type="range"] {     flex: 1; }
  .val-text {
-     width: 10%;
-     color: var(--primary);
+     width: 15%;
      text-align: right;
+     color: var(--co04);
  }
+ /* 百分比列 */
  .percent-row {
      display: flex;
-     height: 18px;
-     border-radius: 9px;
+     height: 24px;
      overflow: hidden;
      margin: 10px 0;
-     background: #ddd;
-     line-height: 18px;
-     color: white;
+     line-height: 24px;
+     color: var(--co02);
      text-align: center;
  }
- /*=================================================== */
-
-
+ /* ------------------------------------- */
  /* 數字輸入框*/
-
  input[type=number] {
      border: 0px;
-     background-color: #2c3e50;
-     color: #ecf0f1;
+     background-color: var(--co04);
+     color: var(--co02);
      padding: 0px 10px;
-     border-radius: 4px;
+     border-radius: 3px;
      font-family: "Micro 5";
      font-size: 20px;
      width: 20px;
+     margin-right: 12px;
      -moz-appearance: textfield;
  }
  /* 滑桿樣式 */
-
  input[type="range"] {
      width: 100%;
+     background: transparent;
  }
- /* 滑桿軌道-Firefox */
-
+ /* 軌道-Firefox */
  input[type="range"]::-moz-range-track {
-     background: #34495e;
+     background: var(--co03);
      height: 6px;
-     border-radius: 0px;
  }
- /* 滑桿控制紐 (圓點) - Firefox */
-
+ /* 滑鈕-Firefox */
  input[type="range"]::-moz-range-thumb {
      border-radius: 0px;
-     background-color: #3498db;
-     height: 24px;
-     width: 14px;
+     background-color: var(--co05);
+     height: 15px;
+     width: 10px;
      border: none;
  }
  /* -檔案上傳按鈕樣式 */
-
  input[type="file"]::file-selector-button {
-     background-color: #34495e;
-     color: white;
-     padding: 6px 12px;
-     border-radius: 4px;
+     background-color: var(--co04);
+     color: var(--co03);
+     padding: 2px 10px;
+     border-radius: 3px;
      border: none;
      cursor: pointer;
-     transition: background 0.3s;
-     font-size: 12px;
      margin-right: 10px;
+     height: 20px;
  }
 
  </style>
@@ -319,45 +274,74 @@ scrollbar-color: #000077 #bada55;
   <!-- ================================================ -->
 
 <body>
-   <div class="sidebar">
-      <details open="">
-         <summary>
-            比例工具
-         </summary>
-         <div style="margin: 10px 0;">
-            <div class="char-tabs" id="charTabs"></div><button class="a" onclick="addCharacter()">✚新增</button> <button class="d" onclick="deleteCharacter()">✖刪除</button> <button class="r" onclick="resetCurrent()">⭯重置</button>
-         </div>
-         <div id="controls" style="display:none">
-            <div class="section">
-               <div class="row">
-                  <label>位置</label> <input id="posX" max="800" min="-800" oninput="updateCharBasic('posX', this.value)" type="range" value="0"> <span class="val-text" id="v-posX">0</span>
-               </div>
+ <div class="sidebar">
+    <details open>
+        <summary> HTAPL </summary>
+
+ <div class="section">
+
+
+
+<div class="a1" ></div><div class="a2" ></div><div class="a3" ></div>
+
+
+
+        <div class="char-tabs" id="charTabs"></div>
+</div>
+         <div class="section">
+            <button type="button" class="a" onclick="addPort()">Add</button>
+            <button type="button" class="d" onclick="delPort()">Ðel</button>
+            <button type="button" class="r" onclick="retPort()">Res</button>
+     
+</div>
+
+
+
+<div class="section">
+        
+        <div id="controls" style="display:none">
+            <div class="row">
+                <label for="posX">Hori</label>
+                <input id="posX" max="800" min="-800" oninput="updateCharBasic('posX', this.value); document.getElementById('v-posX').textContent = this.value" type="range" value="0">
+                <span class="val-text" id="v-posX">0</span>
             </div>
-            <div class="section">
-               <div class="row">
-                  <label>總高</label> <input id="totalH" max="300" min="10" oninput="updateTotalH(this.value)" type="range"> <input id="totalHNum" oninput="updateTotalH(this.value)" type="number">cm
-               </div>
-               <div class="row">
-                  <label>區塊</label> <input id="visibleCount" max="5" min="1" oninput="updateVisibleCount(this.value)" type="range"> <span class="val-text" id="v-visible">5</span>
-               </div>
-               <div class="percent-row" id="percentBar"></div>
-               <div id="heightSliders"></div>
+
+            <div class="row">
+                <label for="totalH">TolH</label>              
+                <input id="totalH" max="300" min="10" oninput="updateTotalH(this.value); document.getElementById('totalHNum').value = this.value" type="range">
+                <input id="totalHNum" oninput="updateTotalH(this.value); document.getElementById('totalH').value = this.value" type="number"> cm
             </div>
-            <div class="section">
-               <div id="widthSliders"></div>
+
+            <div class="row">
+                <label for="visibleCount">Part</label>
+                <input id="visibleCount" max="5" min="1" oninput="updateVisibleCount(this.value); document.getElementById('v-visible').textContent = this.value" type="range" value="5">
+                <span class="val-text" id="v-visible">5</span>
             </div>
-            <div class="section">
-               <div id="imgUploads"></div>
-            </div>
-         </div>
-      </details>
+
+
+            <div class="percent-row" id="percentBar"></div>
+
+
+            <div id="heightSliders"></div>
+            <hr>
+            <div id="widthSliders"></div>
+            <hr>
+            <div id="imgUploads"></div>
+          
+       
    </div>
+
+        </div> 
+   <div class="section"></div>
+    </details>
+</div>
+
+
 <div class="horiz"></div>
    <div class="main-view">
       <div class="stage" id="stage">
          <!-- 尺規(每間隔0, 50, 100, 150, 200) -->
-         <div class="ruler-container" id="rulerContainer">
-
+         <div class="rulerbox" id="rulerbox" >
             <div class="ruler">
                <div></div>
                <div></div>
@@ -374,9 +358,9 @@ scrollbar-color: #000077 #bada55;
 
  <script>
     /* 定義全域常數 */
-    const partNames = ["🄷", "🅃", "🄰", "🄿", "🄻"];
-    const widthNames = ["🄷▴", "🄷▾", "🅃▴", "🅃🄰", "🄰🄿", "🄿🄻", "🄻▾"];
-    const colors = ["#0D2744", "#53728A", "#7691AD", "#B9CFDD", "#FF929A"];
+    const partNames = ["H", "T", "A", "P", "L"];
+    const widthNames = ["H▴", "H▾", "T▴", "TA", "AP", "PL", "L▾"];
+    const colors = ["rgb(010, 035, 060)", "rgb(055, 095, 130)", "rgb(080, 120, 160)", "rgb(125, 160, 190)", "rgb(230, 100, 100)"];
     const SCALE_BASE = 3.5; // 1cm = 3.5px
 
     /* 初始化角色數據：高度改為百分比(sum=100)，新增 targetH 紀錄實際身高 */
@@ -414,7 +398,7 @@ scrollbar-color: #000077 #bada55;
         init();
     }
 
-    function addCharacter() {
+    function addPort() {
         const newChar = createDefaultChar("" + (characters.length + 1));
         newChar.posX = (characters.length) * 80;
         characters.push(newChar);
@@ -422,7 +406,7 @@ scrollbar-color: #000077 #bada55;
         init();
     }
 
-    function deleteCharacter() {
+    function delPort() {
         if (characters.length <= 1) return;
         characters.splice(activeIdx, 1);
         activeIdx = 0;
@@ -431,11 +415,7 @@ scrollbar-color: #000077 #bada55;
 
     /* 載入控制項：範圍統一為 1~100 */
    
-   
-   
-   
-   
-   
+
    
  function loadControls() {
     const c = characters[activeIdx];
@@ -452,7 +432,7 @@ scrollbar-color: #000077 #bada55;
     // 高度滑桿：從百分比改為 cm
     const hDiv = document.getElementById('heightSliders');
     hDiv.innerHTML = c.heights.map((h, i) => {
-        const cmVal = (h / 100 * c.targetH).toFixed(1); // 計算當前 cm
+        const cmVal = (h / 100 * c.targetH).toFixed(0); // 計算當前 cm
         return `
             <div class="row" style="display: ${i < c.visible ? 'flex' : 'none'}">
                 <label>${partNames[i]}</label>
@@ -463,21 +443,13 @@ scrollbar-color: #000077 #bada55;
                     value="${cmVal}" 
                     class="h-slider" 
                     oninput="adjustPartHeightCM(${i}, this.value)">
-                <span class="val-text">${cmVal} cm</span>
+                <span class="val-text">${cmVal}</span>
             </div>
         `;
     }).join('');
       
       
-   
-   
-   
-   
-   
-   
-  
-      
-      
+
 
         // 寬度滑桿 (1-100)
         const wDiv = document.getElementById('widthSliders');
@@ -501,10 +473,7 @@ scrollbar-color: #000077 #bada55;
         updatePercentBar();
     }
    
-   
-   
-   
-   
+
          function adjustPartHeightCM(idx, newValCm) {
     const c = characters[activeIdx];
     // 將輸入的 cm 轉回百分比 (例如: 45cm / 180cm * 100 = 25%)
@@ -514,8 +483,7 @@ scrollbar-color: #000077 #bada55;
     adjustPartHeight(idx, newValPercent);
 }
     
-   
-   
+
 
 function syncUISliders() {
     const c = characters[activeIdx];
@@ -523,12 +491,12 @@ function syncUISliders() {
     const hTexts = document.querySelector('#heightSliders').querySelectorAll('.val-text');
     
     c.heights.forEach((h, i) => {
-        const cmVal = (h / 100 * c.targetH).toFixed(1);
+        const cmVal = (h / 100 * c.targetH).toFixed(0);
         if (hSliders[i]) {
             hSliders[i].value = cmVal;
             hSliders[i].max = c.targetH; // 確保 max 隨總身高更新
         }
-        if (hTexts[i]) hTexts[i].innerText = cmVal + ' cm';
+        if (hTexts[i]) hTexts[i].innerText = cmVal;
     });
     updatePercentBar();
 }
@@ -700,10 +668,10 @@ function renderStage() {
         stage.appendChild(label);
     });
 
-    document.getElementById('rulerContainer').style.transform = `scale(${scale})`;
+    document.getElementById('rulerbox').style.transform = `scale(${scale})`;
 }  
 
-    function resetCurrent() {
+    function retPort() {
         const name = characters[activeIdx].name;
         characters[activeIdx] = createDefaultChar(name);
         init();
