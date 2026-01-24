@@ -36,26 +36,29 @@
  }
  /* 左側選單 */
  .sidebar {
+     background: linear-gradient(to right, var(--co01) 6%, var(--co02) 6%);
+     border: 3px solid var(--co04);
+ }
+ details {
      position: absolute;
      height: auto;
      width: 250px;
      left: 15px;
      top: 15px;
      max-height: 95%;
-     padding: 0px;
      overflow-y: auto;
-     display: flex;
-     flex-direction: column;
-     z-index: 100;
      scrollbar-width: none;
-     background: linear-gradient(to right, var(--co01) 6%, var(--co02) 6%);
-     border: 3px solid var(--co04);
- }
+     z-index: 100;
+}
  summary {
-     background: var(--co04);
-     color: var(--co02);
+     padding: 0px 10px;
+     background: var(--co02);
+     color: var(--co04);
  }
- details[open] summary {}
+ details[open] summary {
+     background: var(--co04);
+     color: var(--co02);     
+ }
  .char-tabs {
      display: flex;
      gap: 6px;
@@ -289,11 +292,14 @@ repeating-linear-gradient(0deg, var(--co06) 0 2px, transparent 0 175px);
   <title></title>
 </head>
 <body>
-  <div class="sidebar">
-    <details open="">
+ 
+    <details open>
       <summary>
         HTAPL
       </summary>
+
+ <div class="sidebar">
+
       <div class="section">
         <div class="a1"></div>
         <div class="a2"></div>
@@ -334,8 +340,11 @@ repeating-linear-gradient(0deg, var(--co06) 0 2px, transparent 0 175px);
 
 
 </div>
-    </details>
+
   </div>
+
+    </details>
+
 <!-- =========================== -->
   <div class="horiz"></div>
   <div class="main-view">
