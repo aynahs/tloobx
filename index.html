@@ -307,14 +307,11 @@ input[type="range"]::-webkit-slider-thumb {
   <title></title>
 </head>
 <body>
- 
     <details open>
       <summary>
         HTAPL
       </summary>
-
  <div class="sidebar">
-
       <div class="section">
         <div class="a1"></div>
         <div class="a2"></div>
@@ -349,15 +346,9 @@ input[type="range"]::-webkit-slider-thumb {
         </div>
       </div>
       <div class="section">
-
-
-
 </div>
-
   </div>
-
     </details>
-
 <!-- =========================== -->
   <div class="horiz"></div>
   <div class="main-view">
@@ -377,7 +368,6 @@ input[type="range"]::-webkit-slider-thumb {
 </body>
 </html>
 
-
   <!-- ================================================ -->
 
  <script>
@@ -386,76 +376,66 @@ input[type="range"]::-webkit-slider-thumb {
     const widthNames = ["H▴", "H▾", "T▴", "TA", "AP", "PL", "L▾"];
     const colors = ["rgb(010, 035, 060)", "rgb(055, 095, 130)", "rgb(080, 120, 160)", "rgb(125, 160, 190)", "rgb(230, 100, 100)"];
     const SCALE_BASE = 3.5; // 1cm = 3.5px
-
     /* 初始化角色數據：高度改為百分比(sum=100)，新增 targetH 紀錄實際身高 */
     function createDefaultChar(name) {
-        return {
-            name: name,
-            posX: 0,
-            visible: 5,
-            targetH: 180, // 實際身高 (cm)
-            heights: [14, 14, 11, 11, 50], // 各部位佔比 (%)，總和須為 100
-            widths: [25, 25, 45, 40, 30, 40, 20], // 寬度 (相對單位 1-100)
-            imgs: [null, null, null, null, null]
-        };
+      return {
+        name: name,
+        posX: 0,
+        visible: 5,
+        targetH: 180, // 實際身高 (cm)
+        heights: [14, 14, 11, 11, 50], // 各部位佔比 (%)，總和須為 100
+        widths: [25, 25, 45, 40, 30, 40, 20], // 寬度 (相對單位 1-100)
+        imgs: [null, null, null, null, null]
+      };
     }
-
     let characters = [createDefaultChar("1")];
     let activeIdx = 0;
-
     /* 初始化 */
     function init() {
-        renderTabs();
-        loadControls();
-        renderStage();
+      renderTabs();
+      loadControls();
+      renderStage();
     }
 
     function renderTabs() {
-        const container = document.getElementById('charTabs');
-        container.innerHTML = characters.map((c, i) => `
+      const container = document.getElementById('charTabs');
+      container.innerHTML = characters.map((c, i) => `
             <div class="tab ${i === activeIdx ? 'active' : ''}" onclick="switchChar(${i})">${c.name}</div>
         `).join('');
     }
 
     function switchChar(idx) {
-        activeIdx = idx;
-        init();
+      activeIdx = idx;
+      init();
     }
 
     function addPort() {
-        const newChar = createDefaultChar("" + (characters.length + 1));
-        newChar.posX = (characters.length) * 80;
-        characters.push(newChar);
-        activeIdx = characters.length - 1;
-        init();
+      const newChar = createDefaultChar("" + (characters.length + 1));
+      newChar.posX = (characters.length) * 80;
+      characters.push(newChar);
+      activeIdx = characters.length - 1;
+      init();
     }
 
     function delPort() {
-        if (characters.length <= 1) return;
-        characters.splice(activeIdx, 1);
-        activeIdx = 0;
-        init();
+      if (characters.length <= 1) return;
+      characters.splice(activeIdx, 1);
+      activeIdx = 0;
+      init();
     }
-
     /* 載入控制項：範圍統一為 1~100 */
-   
-
-   
- function loadControls() {
-    const c = characters[activeIdx];
-    document.getElementById('controls').style.display = 'block';
-    document.getElementById('posX').value = c.posX;
-    document.getElementById('v-posX').innerText = c.posX;
-    
-    document.getElementById('totalH').value = c.targetH;
-    document.getElementById('totalHNum').value = Math.round(c.targetH);
-    
-    document.getElementById('visibleCount').value = c.visible;
-    document.getElementById('v-visible').innerText = c.visible;
-
-    // 高度滑桿：從百分比改為 cm
-    const hDiv = document.getElementById('heightSliders');
-    hDiv.innerHTML = c.heights.map((h, i) => {
+    function loadControls() {
+      const c = characters[activeIdx];
+      document.getElementById('controls').style.display = 'block';
+      document.getElementById('posX').value = c.posX;
+      document.getElementById('v-posX').innerText = c.posX;
+      document.getElementById('totalH').value = c.targetH;
+      document.getElementById('totalHNum').value = Math.round(c.targetH);
+      document.getElementById('visibleCount').value = c.visible;
+      document.getElementById('v-visible').innerText = c.visible;
+      // 高度滑桿：從百分比改為 cm
+      const hDiv = document.getElementById('heightSliders');
+      hDiv.innerHTML = c.heights.map((h, i) => {
         const cmVal = (h / 100 * c.targetH).toFixed(0); // 計算當前 cm
         return `
             <div class="row" style="display: ${i < c.visible ? 'flex' : 'none'}">
@@ -470,237 +450,203 @@ input[type="range"]::-webkit-slider-thumb {
                 <span class="val-text">${cmVal}</span>
             </div>
         `;
-    }).join('');
-      
-      
-
-
-        // 寬度滑桿 (1-100)
-        const wDiv = document.getElementById('widthSliders');
-        wDiv.innerHTML = c.widths.map((w, i) => {
-            let show = (i <= 1 && c.visible >= 1) || (i <= 3 && c.visible >= 2) || (i === 4 && c.visible >= 3) || (i === 5 && c.visible >= 4) || (i === 6 && c.visible >= 5);
-            return `
+      }).join('');
+      // 寬度滑桿 (1-100)
+      const wDiv = document.getElementById('widthSliders');
+      wDiv.innerHTML = c.widths.map((w, i) => {
+        let show = (i <= 1 && c.visible >= 1) || (i <= 3 && c.visible >= 2) || (i === 4 && c.visible >= 3) || (i === 5 && c.visible >= 4) || (i === 6 && c.visible >= 5);
+        return `
                 <div class="row" style="display: ${show ? 'flex' : 'none'}">
                     <label>${widthNames[i]}</label>
                     <input type="range" min="1" max="100" value="${w}" class="w-slider" oninput="updateCharWidth(${i}, this.value)">
                     <span class="val-text">${w}</span>
                 </div>
             `;
-        }).join('');
-
-        const iDiv = document.getElementById('imgUploads');
-        iDiv.innerHTML = partNames.map((name, i) => `
+      }).join('');
+      const iDiv = document.getElementById('imgUploads');
+      iDiv.innerHTML = partNames.map((name, i) => `
             <div class="row" style="display: ${i < c.visible ? 'flex' : 'none'}">
                 <label>${name}</label><input type="file" style="font-size:10px" onchange="uploadImg(event, ${i})">
             </div>
         `).join('');
-        updatePercentBar();
+      updatePercentBar();
     }
-   
 
-         function adjustPartHeightCM(idx, newValCm) {
-    const c = characters[activeIdx];
-    // 將輸入的 cm 轉回百分比 (例如: 45cm / 180cm * 100 = 25%)
-    const newValPercent = (parseFloat(newValCm) / c.targetH) * 100;
-    
-    // 呼叫原本處理百分比分配的邏輯
-    adjustPartHeight(idx, newValPercent);
-}
-    
+    function adjustPartHeightCM(idx, newValCm) {
+      const c = characters[activeIdx];
+      // 將輸入的 cm 轉回百分比 (例如: 45cm / 180cm * 100 = 25%)
+      const newValPercent = (parseFloat(newValCm) / c.targetH) * 100;
+      // 呼叫原本處理百分比分配的邏輯
+      adjustPartHeight(idx, newValPercent);
+    }
 
-
-function syncUISliders() {
-    const c = characters[activeIdx];
-    const hSliders = document.querySelectorAll('.h-slider');
-    const hTexts = document.querySelector('#heightSliders').querySelectorAll('.val-text');
-    
-    c.heights.forEach((h, i) => {
+    function syncUISliders() {
+      const c = characters[activeIdx];
+      const hSliders = document.querySelectorAll('.h-slider');
+      const hTexts = document.querySelector('#heightSliders').querySelectorAll('.val-text');
+      c.heights.forEach((h, i) => {
         const cmVal = (h / 100 * c.targetH).toFixed(0);
         if (hSliders[i]) {
-            hSliders[i].value = cmVal;
-            hSliders[i].max = c.targetH; // 確保 max 隨總身高更新
+          hSliders[i].value = cmVal;
+          hSliders[i].max = c.targetH; // 確保 max 隨總身高更新
         }
         if (hTexts[i]) hTexts[i].innerText = cmVal;
-    });
-    updatePercentBar();
-}
+      });
+      updatePercentBar();
+    }
 
     function updateCharBasic(key, val) {
-        characters[activeIdx][key] = parseInt(val);
-        document.getElementById('v-' + key).innerText = val;
-        renderStage();
+      characters[activeIdx][key] = parseInt(val);
+      document.getElementById('v-' + key).innerText = val;
+      renderStage();
     }
 
     function updateVisibleCount(val) {
-        characters[activeIdx].visible = parseInt(val);
-        // 當可見部位改變，需重新分配百分比確保總和為 100
-        const c = characters[activeIdx];
-        const avg = 100 / c.visible;
-        for(let i=0; i<5; i++) c.heights[i] = (i < c.visible) ? avg : 0;
-        loadControls();
-        renderStage();
+      characters[activeIdx].visible = parseInt(val);
+      // 當可見部位改變，需重新分配百分比確保總和為 100
+      const c = characters[activeIdx];
+      const avg = 100 / c.visible;
+      for (let i = 0; i < 5; i++) c.heights[i] = (i < c.visible) ? avg : 0;
+      loadControls();
+      renderStage();
     }
-
     /* 調整高度比例：確保可見部位總和永遠為 100% */
     function adjustPartHeight(idx, newVal) {
-        newVal = parseFloat(newVal);
-        const c = characters[activeIdx];
-        const minVal = 1;
-        
-        // 限制最大值，確保其他部位至少有 1%
-        const maxLimit = 100 - (c.visible - 1) * minVal;
-        if (newVal > maxLimit) newVal = maxLimit;
-        if (newVal < minVal) newVal = minVal;
-
-        const oldVal = c.heights[idx];
-        const delta = newVal - oldVal;
-        const otherIndices = [];
-        for (let i = 0; i < c.visible; i++) {
-            if (i !== idx) otherIndices.push(i);
-        }
-
-        if (otherIndices.length > 0) {
-            c.heights[idx] = newVal;
-            const otherSum = otherIndices.reduce((sum, i) => sum + c.heights[i], 0);
-            
-            otherIndices.forEach((oi) => {
-                const ratio = otherSum > 0 ? c.heights[oi] / otherSum : 1 / otherIndices.length;
-                c.heights[oi] -= delta * ratio;
-                if (c.heights[oi] < minVal) c.heights[oi] = minVal;
-            });
-
-            // 修正微小誤差確保總和必為 100
-            const currentTotal = c.heights.slice(0, c.visible).reduce((a, b) => a + b, 0);
-            const error = 100 - currentTotal;
-            c.heights[otherIndices[otherIndices.length - 1]] += error;
-        }
-        syncUISliders();
-        renderStage();
+      newVal = parseFloat(newVal);
+      const c = characters[activeIdx];
+      const minVal = 1;
+      // 限制最大值，確保其他部位至少有 1%
+      const maxLimit = 100 - (c.visible - 1) * minVal;
+      if (newVal > maxLimit) newVal = maxLimit;
+      if (newVal < minVal) newVal = minVal;
+      const oldVal = c.heights[idx];
+      const delta = newVal - oldVal;
+      const otherIndices = [];
+      for (let i = 0; i < c.visible; i++) {
+        if (i !== idx) otherIndices.push(i);
+      }
+      if (otherIndices.length > 0) {
+        c.heights[idx] = newVal;
+        const otherSum = otherIndices.reduce((sum, i) => sum + c.heights[i], 0);
+        otherIndices.forEach((oi) => {
+          const ratio = otherSum > 0 ? c.heights[oi] / otherSum : 1 / otherIndices.length;
+          c.heights[oi] -= delta * ratio;
+          if (c.heights[oi] < minVal) c.heights[oi] = minVal;
+        });
+        // 修正微小誤差確保總和必為 100
+        const currentTotal = c.heights.slice(0, c.visible).reduce((a, b) => a + b, 0);
+        const error = 100 - currentTotal;
+        c.heights[otherIndices[otherIndices.length - 1]] += error;
+      }
+      syncUISliders();
+      renderStage();
+    }
+    /* 更新總身高：現在只改數值，不影響部位比例 */
+    function updateTotalH(val) {
+      if (val === "" || isNaN(val) || val <= 0) return;
+      characters[activeIdx].targetH = parseFloat(val);
+      document.getElementById('totalH').value = val;
+      document.getElementById('totalHNum').value = Math.round(val);
+      // 關鍵：重新加載控制項以更新滑桿的 max 值與 cm 顯示
+      loadControls();
+      renderStage();
     }
 
-    /* 更新總身高：現在只改數值，不影響部位比例 */
-function updateTotalH(val) {
-    if (val === "" || isNaN(val) || val <= 0) return;
-    characters[activeIdx].targetH = parseFloat(val);
-    document.getElementById('totalH').value = val;
-    document.getElementById('totalHNum').value = Math.round(val);
-    
-    // 關鍵：重新加載控制項以更新滑桿的 max 值與 cm 顯示
-    loadControls(); 
-    renderStage();
-}
-
     function updateCharWidth(i, val) {
-        characters[activeIdx].widths[i] = parseInt(val);
-        const wTexts = document.querySelector('#widthSliders').querySelectorAll('.val-text');
-        if (wTexts[i]) wTexts[i].innerText = val;
-        renderStage();
+      characters[activeIdx].widths[i] = parseInt(val);
+      const wTexts = document.querySelector('#widthSliders').querySelectorAll('.val-text');
+      if (wTexts[i]) wTexts[i].innerText = val;
+      renderStage();
     }
 
     function updatePercentBar() {
-        const c = characters[activeIdx];
-        const bar = document.getElementById('percentBar');
-        bar.innerHTML = c.heights.slice(0, c.visible).map((h, i) => {
-            return `<div style="width:${h}%; background:${colors[i]}">${Math.round(h)}%</div>`;
-        }).join('');
+      const c = characters[activeIdx];
+      const bar = document.getElementById('percentBar');
+      bar.innerHTML = c.heights.slice(0, c.visible).map((h, i) => {
+        return `<div style="width:${h}%; background:${colors[i]}">${Math.round(h)}%</div>`;
+      }).join('');
     }
 
     function uploadImg(e, partIdx) {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                characters[activeIdx].imgs[partIdx] = ev.target.result;
-                renderStage();
-            };
-            reader.readAsDataURL(file);
-        }
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          characters[activeIdx].imgs[partIdx] = ev.target.result;
+          renderStage();
+        };
+        reader.readAsDataURL(file);
+      }
     }
 
-function renderStage() {
-    const stage = document.getElementById('stage');
-    let maxDisplayH = 0;
-    
-    // 1. 清除舊有的角色容器與標籤
-    const containers = stage.querySelectorAll('.character-container');
-    const labels = stage.querySelectorAll('.height-label');
-    containers.forEach(el => el.remove());
-    labels.forEach(el => el.remove());
-
-    const WIDTH_REF_H = 180;
-
-    // 2. 第一次計算：找出所有角色的最高值以決定全域縮放比例
-    characters.forEach((c) => {
+    function renderStage() {
+      const stage = document.getElementById('stage');
+      let maxDisplayH = 0;
+      // 1. 清除舊有的角色容器與標籤
+      const containers = stage.querySelectorAll('.character-container');
+      const labels = stage.querySelectorAll('.height-label');
+      containers.forEach(el => el.remove());
+      labels.forEach(el => el.remove());
+      const WIDTH_REF_H = 180;
+      // 2. 第一次計算：找出所有角色的最高值以決定全域縮放比例
+      characters.forEach((c) => {
         let charHPx = 0;
         for (let i = 0; i < c.visible; i++) {
-            charHPx += (c.heights[i] / 100) * c.targetH * SCALE_BASE;
+          charHPx += (c.heights[i] / 100) * c.targetH * SCALE_BASE;
         }
         if (charHPx > maxDisplayH) maxDisplayH = charHPx;
-    });
-
-    const stageH = stage.clientHeight - 120;
-    const scale = maxDisplayH > stageH ? stageH / maxDisplayH : 1;
-
-    // 3. 第二次計算：渲染角色與獨立標籤
-    characters.forEach((c, charIdx) => {
+      });
+      const stageH = stage.clientHeight - 120;
+      const scale = maxDisplayH > stageH ? stageH / maxDisplayH : 1;
+      // 3. 第二次計算：渲染角色與獨立標籤
+      characters.forEach((c, charIdx) => {
         const charDiv = document.createElement('div');
         charDiv.className = 'character-container';
         charDiv.style.left = `calc(50% + ${c.posX}px)`;
         charDiv.style.zIndex = charIdx;
         charDiv.style.transform = `translateX(-50%) scale(${scale})`; // 角色依比例縮放
-
         const widthScale = c.targetH / WIDTH_REF_H;
         for (let i = 0; i < c.visible; i++) {
-            const part = document.createElement('div');
-            part.className = 'part';
-            let tw = ((i === 0) ? c.widths[0] : c.widths[i + 1]) * widthScale;
-            let bw = ((i === 0) ? c.widths[1] : c.widths[i + 2]) * widthScale;
-            const maxW = Math.max(tw, bw);
-            const hPx = (c.heights[i] / 100) * c.targetH * SCALE_BASE;
-            
-            part.style.width = (maxW * SCALE_BASE) + 'px';
-            part.style.height = hPx + 'px';
-
-            if (c.imgs[i]) {
-                part.style.background = `url(${c.imgs[i]}) no-repeat center/cover transparent`;
-            } else {
-                part.style.background = `${colors[i]}`;
-            }
-
-            const tP = ((maxW - tw) / 2 / maxW) * 100;
-            const bP = ((maxW - bw) / 2 / maxW) * 100;
-            part.style.clipPath = `polygon(${tP}% 0%, ${100-tP}% 0%, ${100-bP}% 100%, ${bP}% 100%)`;
-            
-            charDiv.appendChild(part);
+          const part = document.createElement('div');
+          part.className = 'part';
+          let tw = ((i === 0) ? c.widths[0] : c.widths[i + 1]) * widthScale;
+          let bw = ((i === 0) ? c.widths[1] : c.widths[i + 2]) * widthScale;
+          const maxW = Math.max(tw, bw);
+          const hPx = (c.heights[i] / 100) * c.targetH * SCALE_BASE;
+          part.style.width = (maxW * SCALE_BASE) + 'px';
+          part.style.height = hPx + 'px';
+          if (c.imgs[i]) {
+            part.style.background = `url(${c.imgs[i]}) no-repeat center/cover transparent`;
+          } else {
+            part.style.background = `${colors[i]}`;
+          }
+          const tP = ((maxW - tw) / 2 / maxW) * 100;
+          const bP = ((maxW - bw) / 2 / maxW) * 100;
+          part.style.clipPath = `polygon(${tP}% 0%, ${100-tP}% 0%, ${100-bP}% 100%, ${bP}% 100%)`;
+          charDiv.appendChild(part);
         }
         stage.appendChild(charDiv);
-
         // --- 建立高度標籤 (放在角色下方) ---
         const label = document.createElement('div');
         label.className = 'height-label';
         label.innerText = `${Math.round(c.targetH)} cm`;
-        
         // 關鍵定位：
         // 1. 水平與角色同步
         label.style.left = `calc(50% + ${c.posX}px)`;
         label.style.transform = `translateX(-50%)`; // 只做位移修正，不跟隨 scale
-        
         // 2. 垂直定位在舞台底部 (假設腳底基準線在 bottom: 60px，標籤放更低)
-        label.style.bottom = '20px'; 
+        label.style.bottom = '20px';
         label.style.position = 'absolute';
-
         stage.appendChild(label);
-    });
-
-    document.getElementById('rulerbox').style.transform = `scale(${scale})`;
-}  
-
-    function retPort() {
-        const name = characters[activeIdx].name;
-        characters[activeIdx] = createDefaultChar(name);
-        init();
+      });
+      document.getElementById('rulerbox').style.transform = `scale(${scale})`;
     }
 
+    function retPort() {
+      const name = characters[activeIdx].name;
+      characters[activeIdx] = createDefaultChar(name);
+      init();
+    }
     window.onresize = renderStage;
     init();
 </script>
