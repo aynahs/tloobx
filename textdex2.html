@@ -1,313 +1,172 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>精簡版表格產生器 - 自訂字體版</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --primary: #3b82f6; --bg: #e2e8f0; --sidebar: #ffffff;
+            --blue: #0056b3; --green: #198754; --dark: #212529;
+        }
+        body { font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; margin: 0; display: flex; height: 100vh; background: var(--bg); }
+        
+        /* --- Sidebar --- */
+        .sidebar { width: 350px; background: var(--sidebar); display: flex; flex-direction: column; border-right: 1px solid #cbd5e1; }
+        .sidebar-header { padding: 20px; background: #1e293b; color: white; }
+        .scroll-content { padding: 20px; overflow-y: auto; flex: 1; }
+        .section-title { font-size: 0.8rem; color: #64748b; margin: 15px 0 8px; font-weight: bold; text-transform: uppercase; }
+        
+        /* 表單元件 */
+        .btn-group { display: flex; gap: 5px; margin-bottom: 10px; }
+        .btn-group button { flex: 1; padding: 8px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; border-radius: 6px; }
+        .btn-group button.active { background: var(--primary); color: white; border-color: var(--primary); }
+        
+        input[type="text"], textarea { 
+            width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; 
+            margin-bottom: 10px; box-sizing: border-box; font-size: 0.9rem;
+        }
+        textarea { height: 80px; resize: vertical; }
+        
+        .btn-img { width: 100%; padding: 12px; background: #10b981; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px;}
 
- <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>精簡版表格產生器</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <style>
-   :root {
-    --primary: #3b82f6;
-    --bg: #e2e8f0;
-    --sidebar: #ffffff;
-    --blue: #0056b3;
-    --green: #198754;
-    --dark: #212529;
-   }
+        /* --- Preview Area --- */
+        .preview-area { flex: 1; padding: 40px; overflow: auto; display: flex; justify-content: center;
+      align-items: flex-start;
+      }
+        #export-canvas { background: white; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); display: flex; box-sizing: border-box; }
+        
+        .layout-vertical { flex-direction: column; gap: 30px; width: 800px; }
+        .layout-horizontal { flex-direction: row; gap: 20px; width: auto; }
+        
+        .table-block { flex: 1; min-width: 250px; }
+        .table-block h3 { margin: 0 0 10px; padding-left: 10px; outline: none; font-size: 1.2rem; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #e2e8f0; padding: 10px; text-align: left; }
 
-   body {
-    font-family: sans-serif;
-    margin: 0;
-    display: flex;
-    height: 100vh;
-    background: var(--bg);
-   }
+        /* --- Themes --- */
+        .theme-blue h3 { border-left: 4px solid var(--blue); color: var(--blue); }
+        .theme-blue th { background: var(--blue); color: white; }
+        .theme-blue tr:nth-child(even) { background: #f1f7ff; }
 
-   /* --- Sidebar --- */
-   .sidebar {
-    width: 350px;
-    background: var(--sidebar);
-    display: flex;
-    flex-direction: column;
-    border-right: 1px solid #cbd5e1;
-   }
+        .theme-green h3 { border-left: 4px solid var(--green); color: var(--green); }
+        .theme-green th { background: var(--green); color: white; }
+        .theme-green tr:nth-child(even) { background: #f0fdf4; }
 
-   .sidebar-header {
-    padding: 20px;
-    background: #1e293b;
-    color: white;
-   }
+        .theme-dark h3 { border-bottom: 2px solid var(--dark); color: var(--dark); }
+        .theme-dark th { background: var(--dark); color: white; }
+    </style>
+</head>
+<body>
 
-   .scroll-content {
-    padding: 20px;
-    overflow-y: auto;
-    flex: 1;
-   }
+    <aside class="sidebar">
+        <div class="sidebar-header"><h2>表格產生器</h2></div>
+        <div class="scroll-content">
+            <div class="section-title">1. 排版與主題</div>
+            <div class="btn-group" data-type="layout">
+                <button class="active" data-value="layout-vertical">垂直</button>
+                <button data-value="layout-horizontal">水平</button>
+            </div>
+            <div class="btn-group" data-type="theme">
+                <button class="active" data-value="theme-blue">商務藍</button>
+                <button data-value="theme-green">簡約綠</button>
+                <button data-value="theme-dark">現代黑</button>
+            </div>
 
-   .section-title {
-    font-size: 0.8rem;
-    color: #64748b;
-    margin: 15px 0 8px;
-    font-weight: bold;
-   }
+            <div class="section-title">2. 字體設定 (電腦內建)</div>
+            <input type="text" id="fontInput" placeholder="例如: Microsoft JhengHei, 標楷體, Arial" oninput="updateStyles()">
+            <p style="font-size: 0.75rem; color: #94a3b8; margin-top: -5px;">* 請輸入正確的字體名稱，若系統未安裝則無效</p>
 
-   .btn-group {
-    display: flex;
-    gap: 5px;
-    margin-bottom: 10px;
-   }
+            <div class="section-title">3. 內容編輯</div>
+            <div id="inputContainer">
+                <textarea placeholder="區塊 A">標題,數值&#10;項目一,100&#10;項目二,200</textarea>
+                <textarea placeholder="區塊 B">類別,負責人,進度&#10;設計,小明,80%&#10;開發,小華,50%</textarea>
+                <textarea placeholder="區塊 C">備註&#10;這是自動延伸的內容。</textarea>
+            </div>
 
-   .btn-group button {
-    flex: 1;
-    padding: 8px;
-    border: 1px solid #cbd5e1;
-    background: #fff;
-    cursor: pointer;
-    border-radius: 6px;
-   }
+            <button class="btn-img" onclick="exportImage()">📷 匯出為圖片</button>
+        </div>
+    </aside>
 
-   .btn-group button.active {
-    background: var(--primary);
-    color: white;
-    border-color: var(--primary);
-   }
+    <main class="preview-area">
+        <div id="export-canvas" class="layout-vertical theme-blue">
+            <!-- JS 動態生成 -->
+        </div>
+    </main>
 
-   textarea {
-    width: 100%;
-    height: 80px;
-    padding: 10px;
-    border: 1px solid #cbd5e1;
-    border-radius: 6px;
-    resize: vertical;
-    margin-bottom: 10px;
-    box-sizing: border-box;
-   }
+    <script>
+        const canvas = document.getElementById('export-canvas');
+        const textareas = document.querySelectorAll('#inputContainer textarea');
+        const fontInput = document.getElementById('fontInput');
+        let config = { layout: 'layout-vertical', theme: 'theme-blue' };
 
-   .btn-img {
-    width: 100%;
-    padding: 12px;
-    background: #10b981;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-weight: bold;
-    cursor: pointer;
-   }
+        function init() {
+            // 按鈕切換事件
+            document.querySelectorAll('.btn-group').forEach(group => {
+                group.onclick = (e) => {
+                    if (e.target.tagName !== 'BUTTON') return;
+                    const type = group.dataset.type;
+                    config[type] = e.target.dataset.value;
+                    group.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === e.target));
+                    updateStyles();
+                };
+            });
 
-   /* --- Preview Area --- */
-   .preview-area {
-    flex: 1;
-    padding: 40px;
-    overflow: auto;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-   }
+            // 輸入內容事件
+            textareas.forEach(area => area.oninput = render);
+            render();
+        }
 
-   #export-canvas {
-    background: white;
-    padding: 40px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-    display: flex;
-    box-sizing: border-box;
+        // 更新樣式與字體
+        function updateStyles() {
+            canvas.className = `${config.layout} ${config.theme}`;
+            // 設定字體，若沒輸入則回歸預設
+            canvas.style.fontFamily = fontInput.value || '"PingFang TC", "Microsoft JhengHei", sans-serif';
+        }
 
-   }
+        // 渲染表格內容
+        function render() {
+            canvas.innerHTML = Array.from(textareas).map((area) => {
+                const lines = area.value.trim().split('\n');
+                if (!lines[0]) return '';
 
-   .layout-vertical {
-    flex-direction: column;
-    gap: 30px;
-    width: 800px;
-   }
+                const tableHTML = lines.map((line, rowIdx) => {
+                    const cells = line.split(/,|\t/); // 支援逗號或 Tab
+                    const Tag = rowIdx === 0 ? 'th' : 'td';
+                    const content = cells.map(c => `<${Tag}>${escapeHtml(c)}</${Tag}>`).join('');
+                    
+                    if (rowIdx === 0) return `<thead><tr>${content}</tr></thead><tbody>`;
+                    const isLast = rowIdx === lines.length - 1;
+                    return `<tr>${content}</tr>${isLast ? '</tbody>' : ''}`;
+                }).join('');
 
-   .layout-horizontal {
-    flex-direction: row;
-    gap: 20px;
-    width: auto;
-   }
-
-   .table-block {
-    flex: 1;
-    min-width: 250px;
-   }
-
-   .table-block h3 {
-    margin: 0 0 10px;
-    padding-left: 10px;
-    outline: none;
-   }
-
-   table {
-    width: 100%;
-    border-collapse: collapse;
-   }
-
-   th,
-   td {
-    border: 1px solid #e2e8f0;
-    padding: 10px;
-    text-align: left;
-   }
-
-   /* --- Themes --- */
-   .theme-blue h3 {
-    border-left: 4px solid var(--blue);
-    color: var(--blue);
-   }
-
-   .theme-blue th {
-    background: var(--blue);
-    color: white;
-   }
-
-   .theme-blue tr:nth-child(even) {
-    background: #f1f7ff;
-   }
-
-   .theme-green h3 {
-    border-left: 4px solid var(--green);
-    color: var(--green);
-   }
-
-   .theme-green th {
-    background: var(--green);
-    color: white;
-   }
-
-   .theme-green tr:nth-child(even) {
-    background: #f0fdf4;
-   }
-
-   .theme-dark h3 {
-    border-bottom: 2px solid var(--dark);
-    color: var(--dark);
-   }
-
-   .theme-dark th {
-    background: var(--dark);
-    color: white;
-   }
-  </style>
- </head>
-
- <body>
-
-  <aside class="sidebar">
-   <div class="sidebar-header">
-    <h2>表格產生器</h2>
-   </div>
-   <div class="scroll-content">
-    <div class="section-title">1. 排版方向</div>
-    <div class="btn-group" data-type="layout">
-     <button class="active" data-value="layout-vertical">垂直</button>
-     <button data-value="layout-horizontal">水平</button>
-    </div>
-
-    <div class="section-title">2. 配色主題</div>
-    <div class="btn-group" data-type="theme">
-     <button class="active" data-value="theme-blue">商務藍</button>
-     <button data-value="theme-green">簡約綠</button>
-     <button data-value="theme-dark">現代黑</button>
-    </div>
-
-    <div class="section-title">3. 內容編輯</div>
-    <div id="inputContainer">
-     <textarea placeholder="區塊 A">標題,數值&#10;項目一,100&#10;項目二,200</textarea>
-     <textarea placeholder="區塊 B">類別,負責人,進度&#10;設計,小明,80%&#10;開發,小華,50%</textarea>
-     <textarea placeholder="區塊 C">備註&#10;這是自動延伸的內容。</textarea>
-    </div>
-
-    <button class="btn-img" onclick="exportImage()">📷 匯出為圖片</button>
-   </div>
-  </aside>
-
-  <main class="preview-area">
-   <div id="export-canvas" class="layout-vertical theme-blue">
-    <!-- 由 JS 動態生成內容 -->
-   </div>
-  </main>
-
-  <script>
-   const canvas = document.getElementById('export-canvas');
-   const textareas = document.querySelectorAll('#inputContainer textarea');
-   let config = {
-    layout: 'layout-vertical',
-    theme: 'theme-blue'
-   };
-
-   // 1. 初始化與事件綁定
-   function init() {
-    // 切換按鈕事件 (利用 Event Delegation)
-    document.querySelectorAll('.btn-group').forEach(group => {
-     group.onclick = (e) => {
-      if (e.target.tagName !== 'BUTTON') return;
-      const type = group.dataset.type;
-      const val = e.target.dataset.value;
-
-      config[type] = val;
-      group.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === e.target));
-      updateStyles();
-     };
-    });
-
-    // 輸入框事件
-    textareas.forEach((area, i) => {
-     area.oninput = render;
-    });
-
-    render();
-   }
-
-   // 2. 更新樣式
-   function updateStyles() {
-    canvas.className = `${config.layout} ${config.theme}`;
-   }
-
-   // 3. 渲染表格
-   function render() {
-    canvas.innerHTML = Array.from(textareas).map((area, i) => {
-     const lines = area.value.trim().split('\n');
-     if (!lines[0]) return '';
-
-     const tableHTML = lines.map((line, rowIdx) => {
-      const cells = line.split(/,|\t/);
-      const Tag = rowIdx === 0 ? 'th' : 'td';
-      const content = cells.map(c => ` <${Tag}>${escapeHtml(c)}</${Tag}>`).join('');
-
-      if (rowIdx === 0) return `<thead><tr>${content}</tr></thead><tbody>`;
-      return `<tr>${content}</tr>${rowIdx === lines.length - 1 ? '</tbody>' : ''}`;
-     }).join('');
-
-     return `
+                return `
                     <div class="table-block">
                         <h3 contenteditable="true">${area.placeholder}</h3>
                         <table>${tableHTML}</table>
                     </div>`;
-    }).join('');
-   }
+            }).join('');
+        }
 
-   function escapeHtml(str) {
-    const p = document.createElement('p');
-    p.textContent = str;
-    return p.innerHTML;
-   }
+        function escapeHtml(str) {
+            const p = document.createElement('p'); p.textContent = str; return p.innerHTML;
+        }
 
-   // 4. 匯出圖片
-   async function exportImage() {
-    const canvasImg = await html2canvas(canvas, {
-     scale: 2,
-     useCORS: true,
-     height: canvas.scrollHeight,
-     windowHeight: canvas.scrollHeight
-    });
-    const link = document.createElement('a');
-    link.download = `Export_${Date.now()}.png`;
-    link.href = canvasImg.toDataURL();
-    link.click();
-   }
+        async function exportImage() {
+            const canvasImg = await html2canvas(canvas, { 
+                scale: 2, 
+                useCORS: true,
+                height: canvas.scrollHeight,
+                windowHeight: canvas.scrollHeight 
+            });
+            const link = document.createElement('a');
+            link.download = `Export_${Date.now()}.png`;
+            link.href = canvasImg.toDataURL();
+            link.click();
+        }
 
-   init();
-  </script>
- </body>
-
+        init();
+    </script>
+</body>
 </html>
