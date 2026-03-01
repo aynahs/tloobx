@@ -1,285 +1,319 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>三段式表格產生器</title>
-    <!-- 匯出套件 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    
-    <style>
-        :root {
-            --primary: #34495e;
-            --accent: #3498db;
-            --bg: #f0f2f5;
-        }
 
-        body {
-            font-family: "PingFang TC", "Microsoft JhengHei", sans-serif;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            background-color: var(--bg);
-        }
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>精簡版表格產生器</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+   :root {
+    --primary: #3b82f6;
+    --bg: #e2e8f0;
+    --sidebar: #ffffff;
+    --blue: #0056b3;
+    --green: #198754;
+    --dark: #212529;
+   }
 
-        /* 頂部工具列 */
-        .header {
-            background: var(--primary);
-            color: white;
-            padding: 10px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-        }
+   body {
+    font-family: sans-serif;
+    margin: 0;
+    display: flex;
+    height: 100vh;
+    background: var(--bg);
+   }
 
-        .btn-group button {
-            padding: 8px 20px;
-            margin-left: 10px;
-            cursor: pointer;
-            border: none;
-            border-radius: 5px;
-            font-weight: bold;
-            transition: 0.3s;
-        }
+   /* --- Sidebar --- */
+   .sidebar {
+    width: 350px;
+    background: var(--sidebar);
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #cbd5e1;
+   }
 
-        .btn-img { background: #27ae60; color: white; }
-        .btn-pdf { background: #e74c3c; color: white; }
-        button:hover { opacity: 0.8; transform: translateY(-1px); }
+   .sidebar-header {
+    padding: 20px;
+    background: #1e293b;
+    color: white;
+   }
 
-        /* 主佈局 */
-        .container {
-            display: flex;
-            flex: 1;
-            overflow: hidden;
-        }
+   .scroll-content {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+   }
 
-        /* 左側輸入區 */
-        .editor-side {
-            width: 350px;
-            background: #fff;
-            border-right: 1px solid #ccc;
-            padding: 20px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
+   .section-title {
+    font-size: 0.8rem;
+    color: #64748b;
+    margin: 15px 0 8px;
+    font-weight: bold;
+   }
 
-        .input-group {
-            display: flex;
-            flex-direction: column;
-        }
+   .btn-group {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 10px;
+   }
 
-        .input-group label {
-            font-weight: bold;
-            margin-bottom: 5px;
-            color: var(--primary);
-            display: flex;
-            align-items: center;
-        }
+   .btn-group button {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    cursor: pointer;
+    border-radius: 6px;
+   }
 
-        .input-group label::before {
-            content: '';
-            display: inline-block;
-            width: 4px;
-            height: 16px;
-            background: var(--accent);
-            margin-right: 8px;
-        }
+   .btn-group button.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+   }
 
-        textarea {
-            height: 120px;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-family: monospace;
-            resize: vertical;
-        }
+   textarea {
+    width: 100%;
+    height: 80px;
+    padding: 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    resize: vertical;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+   }
 
-        /* 右側預覽區 */
-        .preview-side {
-            flex: 1;
-            padding: 40px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
+   .btn-img {
+    width: 100%;
+    padding: 12px;
+    background: #10b981;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+   }
 
-        /* 匯出目標容器 (包含三個 DIV) */
-        #export-canvas {
-            background: white;
-            padding: 30px;
-            width: 100%;
-            max-width: 800px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
-            display: flex;
-            flex-direction: column;
-            gap: 30px; /* 三個 DIV 之間的間距 */
-        }
+   /* --- Preview Area --- */
+   .preview-area {
+    flex: 1;
+    padding: 40px;
+    overflow: auto;
+    display: flex;
+    justify-content: center;
 
-        /* 每個 DIV 的樣式 */
-        .table-section {
-            width: 100%;
-        }
 
-        .table-section h3 {
-            margin: 0 0 10px 0;
-            color: #333;
-            border-bottom: 2px solid #eee;
-            padding-bottom: 5px;
-        }
 
-        /* CSS 表格美化 */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 14px;
-        }
+    align-items: center;
 
-        th {
-            background-color: #f8f9fa;
-            color: #333;
-            font-weight: 600;
-            border: 1px solid #dee2e6;
-            padding: 10px;
-            text-align: left;
-        }
+   }
 
-        td {
-            border: 1px solid #dee2e6;
-            padding: 10px;
-            color: #555;
-        }
+   #export-canvas {
+    background: white;
+    padding: 40px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    display: flex;
+    box-sizing: border-box;
 
-        tr:nth-child(even) { background-color: #fafafa; }
-    </style>
-</head>
-<body>
+    flex-direction: column;
 
-    <div class="header">
-        <div style="font-size: 1.2rem; font-weight: bold;">多重表格編輯器</div>
-        <div class="btn-group">
-            <button class="btn-img" onclick="exportFile('img')">下載圖片</button>
-            <button class="btn-pdf" onclick="exportFile('pdf')">下載 PDF</button>
-        </div>
+   }
+
+   .layout-vertical {
+    flex-direction: column;
+    gap: 30px;
+    width: 800px;
+   }
+
+   .layout-horizontal {
+    flex-direction: row;
+    gap: 20px;
+    width: auto;
+   }
+
+   .table-block {
+    flex: 1;
+    min-width: 250px;
+   }
+
+   .table-block h3 {
+    margin: 0 0 10px;
+    padding-left: 10px;
+    outline: none;
+   }
+
+   table {
+    width: 100%;
+    border-collapse: collapse;
+   }
+
+   th,
+   td {
+    border: 1px solid #e2e8f0;
+    padding: 10px;
+    text-align: left;
+   }
+
+   /* --- Themes --- */
+   .theme-blue h3 {
+    border-left: 4px solid var(--blue);
+    color: var(--blue);
+   }
+
+   .theme-blue th {
+    background: var(--blue);
+    color: white;
+   }
+
+   .theme-blue tr:nth-child(even) {
+    background: #f1f7ff;
+   }
+
+   .theme-green h3 {
+    border-left: 4px solid var(--green);
+    color: var(--green);
+   }
+
+   .theme-green th {
+    background: var(--green);
+    color: white;
+   }
+
+   .theme-green tr:nth-child(even) {
+    background: #f0fdf4;
+   }
+
+   .theme-dark h3 {
+    border-bottom: 2px solid var(--dark);
+    color: var(--dark);
+   }
+
+   .theme-dark th {
+    background: var(--dark);
+    color: white;
+   }
+  </style>
+ </head>
+
+ <body>
+
+  <aside class="sidebar">
+   <div class="sidebar-header">
+    <h2>表格產生器</h2>
+   </div>
+   <div class="scroll-content">
+    <div class="section-title">1. 排版方向</div>
+    <div class="btn-group" data-type="layout">
+     <button class="active" data-value="layout-vertical">垂直</button>
+     <button data-value="layout-horizontal">水平</button>
     </div>
 
-    <div class="container">
-        <!-- 左側輸入 -->
-        <div class="editor-side">
-            <div class="input-group">
-                <label>區塊一：基本資訊</label>
-                <textarea id="input1" oninput="renderTable(1)">項目,內容&#10;報表名稱,季度銷售統計&#10;製作人,張經理&#10;日期,2023-10-27</textarea>
-            </div>
-
-            <div class="input-group">
-                <label>區塊二：銷售數據</label>
-                <textarea id="input2" oninput="renderTable(2)">產品,單價,數量,小計&#10;螢幕,5000,10,50000&#10;鍵盤,1200,50,60000&#10;滑鼠,800,100,80000</textarea>
-            </div>
-
-            <div class="input-group">
-                <label>區塊三：備註說明</label>
-                <textarea id="input3" oninput="renderTable(3)">編號,注意事項&#10;01,以上金額均為未稅價&#10;02,預計下週一進行複核</textarea>
-            </div>
-        </div>
-
-        <!-- 右側預覽 -->
-        <div class="preview-side">
-            <div id="export-canvas">
-                <!-- 區塊 1 -->
-                <div class="table-section">
-                    <h3 id="title1">基本資訊</h3>
-                    <table id="table1"></table>
-                </div>
-
-                <!-- 區塊 2 -->
-                <div class="table-section">
-                    <h3 id="title2">銷售數據</h3>
-                    <table id="table2"></table>
-                </div>
-
-                <!-- 區塊 3 -->
-                <div class="table-section">
-                    <h3 id="title3">備註說明</h3>
-                    <table id="table3"></table>
-                </div>
-            </div>
-        </div>
+    <div class="section-title">2. 配色主題</div>
+    <div class="btn-group" data-type="theme">
+     <button class="active" data-value="theme-blue">商務藍</button>
+     <button data-value="theme-green">簡約綠</button>
+     <button data-value="theme-dark">現代黑</button>
     </div>
 
-    <script>
-        // 渲染表格的邏輯
-        function renderTable(id) {
-            const input = document.getElementById(`input${id}`).value.trim();
-            const table = document.getElementById(`table${id}`);
-            
-            if (!input) {
-                table.innerHTML = "";
-                return;
-            }
+    <div class="section-title">3. 內容編輯</div>
+    <div id="inputContainer">
+     <textarea placeholder="區塊 A">標題,數值&#10;項目一,100&#10;項目二,200</textarea>
+     <textarea placeholder="區塊 B">類別,負責人,進度&#10;設計,小明,80%&#10;開發,小華,50%</textarea>
+     <textarea placeholder="區塊 C">備註&#10;這是自動延伸的內容。</textarea>
+    </div>
 
-            const rows = input.split('\n');
-            let html = '';
+    <button class="btn-img" onclick="exportImage()">📷 匯出為圖片</button>
+   </div>
+  </aside>
 
-            rows.forEach((row, index) => {
-                const cols = row.split(/,|\t/); // 支援逗點或 Tab
-                if (index === 0) {
-                    html += '<thead><tr>';
-                    cols.forEach(c => html += `<th>${escapeHtml(c)}</th>`);
-                    html += '</tr></thead><tbody>';
-                } else {
-                    html += '<tr>';
-                    cols.forEach(c => html += `<td>${escapeHtml(c)}</td>`);
-                    html += '</tr>';
-                }
-            });
-            html += '</tbody>';
-            table.innerHTML = html;
-        }
+  <main class="preview-area">
+   <div id="export-canvas" class="layout-vertical theme-blue">
+    <!-- 由 JS 動態生成內容 -->
+   </div>
+  </main>
 
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.innerText = text;
-            return div.innerHTML;
-        }
+  <script>
+   const canvas = document.getElementById('export-canvas');
+   const textareas = document.querySelectorAll('#inputContainer textarea');
+   let config = {
+    layout: 'layout-vertical',
+    theme: 'theme-blue'
+   };
 
-        // 統一匯出功能
-        async function exportFile(type) {
-            const element = document.getElementById('export-canvas');
-            
-            // 使用 html2canvas 捕捉畫面
-            const canvas = await html2canvas(element, {
-                scale: 2, // 提高解析度
-                useCORS: true,
-                backgroundColor: '#ffffff'
-            });
+   // 1. 初始化與事件綁定
+   function init() {
+    // 切換按鈕事件 (利用 Event Delegation)
+    document.querySelectorAll('.btn-group').forEach(group => {
+     group.onclick = (e) => {
+      if (e.target.tagName !== 'BUTTON') return;
+      const type = group.dataset.type;
+      const val = e.target.dataset.value;
 
-            if (type === 'img') {
-                const link = document.createElement('a');
-                link.download = 'multi-tables.png';
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-            } else if (type === 'pdf') {
-                const { jsPDF } = window.jspdf;
-                const imgData = canvas.toDataURL('image/png');
-                const pdf = new jsPDF('p', 'mm', 'a4');
-                
-                const pageWidth = pdf.internal.pageSize.getWidth();
-                const pageHeight = pdf.internal.pageSize.getHeight();
-                const imgWidth = pageWidth - 20; // 留點邊距
-                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      config[type] = val;
+      group.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === e.target));
+      updateStyles();
+     };
+    });
 
-                pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
-                pdf.save('multi-tables.pdf');
-            }
-        }
+    // 輸入框事件
+    textareas.forEach((area, i) => {
+     area.oninput = render;
+    });
 
-        // 初始化渲染
-        [1, 2, 3].forEach(id => renderTable(id));
-    </script>
-</body>
+    render();
+   }
+
+   // 2. 更新樣式
+   function updateStyles() {
+    canvas.className = `${config.layout} ${config.theme}`;
+   }
+
+   // 3. 渲染表格
+   function render() {
+    canvas.innerHTML = Array.from(textareas).map((area, i) => {
+     const lines = area.value.trim().split('\n');
+     if (!lines[0]) return '';
+
+     const tableHTML = lines.map((line, rowIdx) => {
+      const cells = line.split(/,|\t/);
+      const Tag = rowIdx === 0 ? 'th' : 'td';
+      const content = cells.map(c => ` <${Tag}>${escapeHtml(c)}</${Tag}>`).join('');
+
+      if (rowIdx === 0) return `<thead><tr>${content}</tr></thead><tbody>`;
+      return `<tr>${content}</tr>${rowIdx === lines.length - 1 ? '</tbody>' : ''}`;
+     }).join('');
+
+     return `
+                    <div class="table-block">
+                        <h3 contenteditable="true">${area.placeholder}</h3>
+                        <table>${tableHTML}</table>
+                    </div>`;
+    }).join('');
+   }
+
+   function escapeHtml(str) {
+    const p = document.createElement('p');
+    p.textContent = str;
+    return p.innerHTML;
+   }
+
+   // 4. 匯出圖片
+   async function exportImage() {
+    const canvasImg = await html2canvas(canvas, {
+     scale: 2,
+     useCORS: true,
+     height: canvas.scrollHeight,
+     windowHeight: canvas.scrollHeight
+    });
+    const link = document.createElement('a');
+    link.download = `Export_${Date.now()}.png`;
+    link.href = canvasImg.toDataURL();
+    link.click();
+   }
+
+   init();
+  </script>
+ </body>
+
 </html>
