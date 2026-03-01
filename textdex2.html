@@ -297,22 +297,39 @@
             canvas.className = `${config.layout} ${config.theme}`;
             canvas.style.fontFamily = fontInput.value || '"PingFang TC", "Microsoft JhengHei", sans-serif';
         }
+      
+      
+      
+      
 
-        function render() {
-            canvas.innerHTML = Array.from(textareas).map((area) => {
-                const lines = area.value.trim().split('\n');
-                if (!lines[0]) return '';
+function render() {
+    canvas.innerHTML = Array.from(textareas).map((area) => {
+        const val = area.value.trim();
+        if (!val) return '';
 
-                const tableHTML = lines.map((line, rowIdx) => {
-                    const cells = line.split(/,|\t/);
-                    const Tag = rowIdx === 0 ? 'th' : 'td';
-                    const content = cells.map(c => `<${Tag}>${escapeHtml(c)}</${Tag}>`).join('');
-                    return rowIdx === 0 ? `<thead><tr>${content}</tr></thead><tbody>` : `<tr>${content}</tr>${rowIdx === lines.length-1 ? '</tbody>':' '}`;
-                }).join('');
+        const lines = val.split('\n');
+        // 判斷第一行是否包含逗號或 Tab，來決定是否產生表格
+        const isTable = lines[0].includes(',') || lines[0].includes('\t');
 
-                return `<div class="table-block"><h3 contenteditable="true">${area.placeholder}</h3><table>${tableHTML}</table></div>`;
+        if (isTable) {
+            // --- 產生表格的邏輯 ---
+            const tableHTML = lines.map((line, rowIdx) => {
+                const cells = line.split(/,|\t/);
+                const Tag = rowIdx === 0 ? 'th' : 'td';
+                const content = cells.map(c => `<${Tag}>${escapeHtml(c)}</${Tag}>`).join('');
+                return rowIdx === 0 ? `<thead><tr>${content}</tr></thead><tbody>` : `<tr>${content}</tr>${rowIdx === lines.length-1 ? '</tbody>':' '}`;
             }).join('');
+            return `<div class="table-block"><h3 contenteditable="true">${area.placeholder}</h3><table>${tableHTML}</table></div>`;
+        } else {
+            // --- 產生一般文字的邏輯 ---
+            const textHTML = lines.map(line => `<p style="margin: 4px 0;">${escapeHtml(line)}</p>`).join('');
+            return `<div class="table-block"><h3 contenteditable="true">${area.placeholder}</h3><div style="padding: 5px 12px;">${textHTML}</div></div>`;
         }
+    }).join('');
+}
+      
+      
+      
 
         function escapeHtml(str) {
             const p = document.createElement('p'); p.textContent = str; return p.innerHTML;
