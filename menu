@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>極簡菜單</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; line-height: 2; }
+        .item { display: flex; gap: 10px; border-bottom: 1px solid #eee; padding: 5px; }
+        .name { width: 100px; }
+        .price { width: 60px; color: #666; }
+        input { width: 50px; }
+        .total { font-size: 1.5em; color: red; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+    <h2>簡易點餐</h2>
+
+    <!-- 當表單內任何輸入變動時，直接執行計算 -->
+    <form oninput="total.value = (q1.value*150) + (q2.value*120) + (q3.value*40)">
+        
+        <div class="item">
+            <span class="name">牛肉麵</span>
+            <span class="price">$150</span>
+            數量：<input type="number" id="q1" value="0" min="0">
+        </div>
+
+        <div class="item">
+            <span class="name">排骨飯</span>
+            <span class="price">$120</span>
+            數量：<input type="number" id="q2" value="0" min="0">
+        </div>
+
+        <div class="item">
+            <span class="name">燙青菜</span>
+            <span class="price">$40</span>
+            數量：<input type="number" id="q3" value="0" min="0">
+        </div>
+
+        <div class="total">
+            總金額：$<output name="total">0</output>
+        </div>
+
+        <button type="reset" style="margin-top: 20px;">清空</button>
+    </form>
+
+</body>
+</html>
